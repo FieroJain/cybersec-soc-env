@@ -1,3 +1,12 @@
+---
+title: CyberSec-SOC-OpenEnv
+emoji: 🛡
+colorFrom: blue
+colorTo: red
+sdk: docker
+pinned: false
+---
+
 # CyberSec-SOC-OpenEnv
 
 > AI agent plays SOC analyst defending a procedurally generated enterprise
@@ -139,22 +148,22 @@ must balance security vs. operational continuity.
 | `isolate` | node id | Disconnects node; stops spread through it |
 | `patch` | node id | Raises security_level +0.2, reduces vulnerabilities -1 |
 | `firewall` | -1 (global) | Halves spread probability for 10 steps |
-| `nothing` | -1 (global) | No-op; penalty if ≥2 active threats |
+| `nothing` | -1 (global) | No-op; penalty if >=2 active threats |
 
 ## File Structure
 
 ```
 cybersec_soc_env/
-├── __init__.py          # Public exports
-├── models.py            # SOCAction, SOCObservation, SOCState
-├── client.py            # SOCEnv WebSocket client
-├── README.md
-├── openenv.yaml         # Registry metadata
-├── pyproject.toml       # Build configuration
-└── server/
-    ├── __init__.py
-    ├── soc_environment.py  # Core RL environment
-    ├── app.py              # FastAPI entry point
-    ├── requirements.txt
-    └── Dockerfile
+??? __init__.py          # Public exports
+??? models.py            # SOCAction, SOCObservation, SOCState
+??? client.py            # SOCEnv WebSocket client
+??? README.md
+??? openenv.yaml         # Registry metadata
+??? pyproject.toml       # Build configuration
+??? server/
+    ??? __init__.py
+    ??? soc_environment.py  # Core RL environment
+    ??? app.py              # FastAPI entry point
+    ??? requirements.txt
+    ??? Dockerfile
 ```

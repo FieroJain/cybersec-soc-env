@@ -1,29 +1,26 @@
-ARG BASE_IMAGE=openenv-base:latest
-FROM ${BASE_IMAGE}
+python -c "
+content = '''FROM python:3.11-slim
+
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH=\"/home/user/.local/bin:\$PATH\"
 
 WORKDIR /app
 
-# Install server-specific Python dependencies
-COPY server/requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt \
-    && rm /tmp/requirements.txt
+RUN pip install --no-cache-dir openenv-core networkx numpy fastapi uvicorn pydantic
 
-# Copy the entire package into the container
-COPY . /app/cybersec_soc_env
+COPY --chown=user . /app/cybersec_soc_env
 
-# Ensure the package is importable
-ENV PYTHONPATH="/app:$PYTHONPATH"
-
-# Runtime configuration (overridable at docker run / compose level)
+ENV PYTHONPATH=\"/app:\$PYTHONPATH\"
 ENV ENABLE_WEB_INTERFACE=1
 ENV TASK_LEVEL=medium
 ENV SEED=42
 
-# Liveness probe: curl the health endpoint
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+EXPOSE 7860
 
-EXPOSE 8000
-
-CMD ["uvicorn", "cybersec_soc_env.server.app:app", \
-     "--host", "0.0.0.0", "--port", "8000"]
+CMD [\"uvicorn\", \"cybersec_soc_env.server.app:app\", \"--host\", \"0.0.0.0\", \"--port\", \"7860\"]
+'''
+with open('c:/Users/HP/Documents/openenv/cybersec_soc_env/Dockerfile', 'w') as f:
+    f.write(content)
+print('Dockerfile created!')
+"
