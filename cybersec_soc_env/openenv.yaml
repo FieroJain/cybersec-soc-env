@@ -1,0 +1,49 @@
+name: cybersec-soc-env
+version: "0.1.0"
+description: >
+  SOC analyst RL environment. AI agent defends a procedurally generated
+  enterprise network against a MITRE ATT&CK inspired multi-stage
+  cyberattack. Features partial observability, alert noise simulation,
+  business impact scoring, and 4 dynamic network topologies.
+
+entry_point: "cybersec_soc_env.server.app:app"
+action_class: "cybersec_soc_env.models:SOCAction"
+observation_class: "cybersec_soc_env.models:SOCObservation"
+state_class: "cybersec_soc_env.models:SOCState"
+
+tasks:
+  - id: easy
+    description: "5 nodes, 1 infected. Isolate before spread. Max 20 steps."
+    max_steps: 20
+    nodes: 5
+    start_compromised: 1
+
+  - id: medium
+    description: "10 nodes, 2 infected. Stop lateral movement. Max 35 steps."
+    max_steps: 35
+    nodes: 10
+    start_compromised: 2
+
+  - id: hard
+    description: "20 nodes, 3 infected. Prevent exfiltration. Max 50 steps."
+    max_steps: 50
+    nodes: 20
+    start_compromised: 3
+
+features:
+  procedural_topology: "star | mesh | segmented | hierarchical — random each episode"
+  partial_observability: "compromise only visible after scan action"
+  alert_noise: "5% false alert rate on all nodes"
+  business_impact: "isolation of high-value nodes incurs disruption cost"
+  attack_stages: "4-stage MITRE ATT&CK progression with exfiltration timer"
+
+reward:
+  true_positive_isolation: +1.0
+  scan_reveals_compromise: +0.5
+  patch_node: +0.3
+  false_positive_isolation: -0.2
+  per_timestep: -0.05
+  do_nothing_while_spreading: -0.1
+  attacker_contained_win: +5.0
+  exfiltration_complete_loss: -5.0
+  perfect_containment_bonus: +2.0
