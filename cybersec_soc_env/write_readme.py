@@ -1,6 +1,6 @@
----
+content = """---
 title: CyberSec-SOC-OpenEnv
-emoji: 🛡
+emoji: \U0001f6e1
 colorFrom: blue
 colorTo: red
 sdk: docker
@@ -157,3 +157,8 @@ grader.py
 Built for Meta x Scaler PyTorch OpenEnv Hackathon 2026.
 GitHub: https://github.com/FieroJain/cybersec-soc-env
 HF Space: https://huggingface.co/spaces/Fieerawe/cybersec-soc-env
+"""
+
+with open('README.md', 'w', encoding='utf-8') as f:
+    f.write(content)
+print('README written!')
