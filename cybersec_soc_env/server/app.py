@@ -176,18 +176,20 @@ def reset_at_task(task_id: str) -> Dict[str, Any]:
 
 
 # ── Gradio dashboard mounted at /web ─────────────────────────────────────────
-# guarded by try/except so the server still starts even if gradio is missing.
+# Guarded by broad try/except so the API server always starts even if Gradio
+# has a problem (missing deps, codec errors, etc.)
+import logging as _logging
+_log = _logging.getLogger(__name__)
+
 try:
-    import gradio as gr
+    import gradio as _gr
     from .gradio_dashboard import demo as _gradio_demo
 
-    gr.mount_gradio_app(app, _gradio_demo, path="/web")
-except ImportError:
-    import warnings
-    warnings.warn(
-        "gradio not installed — dashboard at /web is disabled. "
-        "Run: pip install gradio matplotlib",
-        stacklevel=1,
+    _gr.mount_gradio_app(app, _gradio_demo, path="/web")
+    _log.info("Gradio SOC dashboard mounted at /web")
+except Exception as _e:
+    _log.warning(
+        "Gradio dashboard not mounted (run 'pip install gradio matplotlib'): %s", _e
     )
 
 
