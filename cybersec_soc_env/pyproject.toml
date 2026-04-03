@@ -37,3 +37,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["cybersec_soc_env"]
+
+[project.scripts]
+server = "cybersec_soc_env.server.app:main"

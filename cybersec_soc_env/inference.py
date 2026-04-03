@@ -14,8 +14,9 @@ from cybersec_soc_env import SOCEnv, SOCAction
 API_BASE_URL = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME   = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
 HF_TOKEN     = os.environ.get("HF_TOKEN", "")
-ENV_URL = os.environ.get("ENV_URL", "https://Fieerawe-cybersec-soc-env.hf.space")
+ENV_URL      = os.environ.get("ENV_URL", "https://Fieerawe-cybersec-soc-env.hf.space")
 
+client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 SYSTEM_PROMPT = """You are a Security Operations Center (SOC) analyst.
 You must defend a network against a cyberattack.
 At each step you will see:

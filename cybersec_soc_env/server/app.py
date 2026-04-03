@@ -279,3 +279,10 @@ def reset_at_task(task_id: str) -> Dict[str, Any]:
         "attack_stage": int(obs.attack_stage),
         "observation": obs.model_dump(),
     }
+
+   def main():
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=7860)
+
+if __name__ == "__main__":
+    main()
