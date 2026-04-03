@@ -12,11 +12,17 @@ pinned: false
 AI agent plays SOC analyst defending an enterprise network against a cyberattack.
 Built for Meta x Scaler PyTorch OpenEnv Hackathon 2026.
 
-## Why This Matters
+## Research Motivation
 
-Every large company employs SOC analysts to monitor networks and respond to
-cyberattacks. This environment simulates exactly that task giving RL agents
-a realistic environment to learn threat detection and containment strategy.
+Training AI agents for cybersecurity defense is one of the most
+valuable open problems in AI safety. Human SOC analysts are
+overwhelmed - the average enterprise receives 10,000+ security
+alerts per day with 45% being false positives.
+
+CyberSec-SOC-OpenEnv is the first environment in the OpenEnv
+ecosystem designed for this domain, enabling researchers to
+train and evaluate LLM agents on realistic threat detection,
+containment strategy, and risk-vs-disruption tradeoffs.
 
 ## Live API
 
