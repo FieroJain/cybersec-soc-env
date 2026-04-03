@@ -175,6 +175,22 @@ def reset_at_task(task_id: str) -> Dict[str, Any]:
     }
 
 
+# ── Gradio dashboard mounted at /web ─────────────────────────────────────────
+# guarded by try/except so the server still starts even if gradio is missing.
+try:
+    import gradio as gr
+    from .gradio_dashboard import demo as _gradio_demo
+
+    gr.mount_gradio_app(app, _gradio_demo, path="/web")
+except ImportError:
+    import warnings
+    warnings.warn(
+        "gradio not installed — dashboard at /web is disabled. "
+        "Run: pip install gradio matplotlib",
+        stacklevel=1,
+    )
+
+
 def main():
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=7860)
