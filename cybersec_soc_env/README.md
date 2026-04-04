@@ -89,12 +89,11 @@ containment strategy, and risk-vs-disruption tradeoffs.
 
 ## Baseline Scores
 
-| Task | Rule-based Agent | LLM Agent best episode |
-|---|---|---|
-| easy | 0.417 | 0.275 |
-| medium | 0.427 | 0.475 |
-| hard | 0.431 | 0.892 |
-| overall | 0.425 | 0.462 |
+Task    | Rule-based | LLM Agent
+easy    | 0.507      | 0.173
+medium  | 0.387      | 0.485  
+hard    | 0.080      | 0.703
+overall | 0.325      | 0.454
 
 ## Setup
 ```bash
