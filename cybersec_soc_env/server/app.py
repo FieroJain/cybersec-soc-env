@@ -3,15 +3,18 @@ server/app.py - FastAPI application entry point for CyberSec-SOC-OpenEnv.
 """
 
 import os
+import logging as _logging
 from typing import Any, Dict
 
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from openenv.core.env_server import create_fastapi_app
 
 from ..models import SOCAction, SOCObservation
 from .soc_environment import SOCEnvironment, TASK_CONFIG
+
+_log = _logging.getLogger(__name__)
 
 # CONFIG
 task_level: str = os.environ.get("TASK_LEVEL", "medium")
@@ -24,6 +27,13 @@ def make_env() -> SOCEnvironment:
 
 
 app = create_fastapi_app(make_env, SOCAction, SOCObservation)
+
+
+# ROOT REDIRECT — judges see dashboard when they open the Space URL
+@app.get("/")
+def root():
+    """Redirect root to Gradio SOC dashboard."""
+    return RedirectResponse(url="/web")
 
 
 def _run_grader_episode(env: SOCEnvironment) -> Dict[str, Any]:
@@ -175,22 +185,14 @@ def reset_at_task(task_id: str) -> Dict[str, Any]:
     }
 
 
-# ── Gradio dashboard mounted at /web ─────────────────────────────────────────
-# Guarded by broad try/except so the API server always starts even if Gradio
-# has a problem (missing deps, codec errors, etc.)
-import logging as _logging
-_log = _logging.getLogger(__name__)
-
+# GRADIO DASHBOARD mounted at /web
 try:
     import gradio as _gr
     from .gradio_dashboard import demo as _gradio_demo
-
     _gr.mount_gradio_app(app, _gradio_demo, path="/web")
     _log.info("Gradio SOC dashboard mounted at /web")
 except Exception as _e:
-    _log.warning(
-        "Gradio dashboard not mounted (run 'pip install gradio matplotlib'): %s", _e
-    )
+    _log.warning("Gradio dashboard not mounted: %s", _e)
 
 
 def main():
