@@ -19,3 +19,6 @@ GET /tasks
 
 ## Author
 Fiero Jain
+Parthan Rajesh
+Tony James
+
