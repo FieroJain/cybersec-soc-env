@@ -87,13 +87,14 @@ containment strategy, and risk-vs-disruption tradeoffs.
 | medium | 10 | 2 | 35 | Stop lateral movement |
 | hard | 20 | 3 | 50 | Prevent data exfiltration |
 
-## Baseline Scores
+## 📊 Baseline Performance
 
-Task    | Rule-based | LLM Agent
-easy    | 0.507      | 0.173
-medium  | 0.387      | 0.485  
-hard    | 0.080      | 0.703
-overall | 0.325      | 0.454
+| Task   | Rule-Based Agent | LLM Agent |
+|-------|------------------|-----------|
+| easy   | 0.507 | 0.173 |
+| medium | 0.387 | 0.485 |
+| hard   | 0.080 | 0.703 |
+| **Overall** | **0.325** | **0.454** |
 
 ## Setup
 ```bash
