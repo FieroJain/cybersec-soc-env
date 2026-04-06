@@ -1,3 +1,12 @@
+---
+title: CyberSec-SOC-OpenEnv
+emoji: 🛡
+colorFrom: blue
+colorTo: red
+sdk: docker
+pinned: false
+---
+
 # 🛡️ CyberSec-SOC-OpenEnv
 
 > A reinforcement learning environment for training AI agents on enterprise-grade cybersecurity defense.  

@@ -7,7 +7,7 @@ import logging as _logging
 from typing import Any, Dict
 
 from fastapi import HTTPException
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 
 from openenv.core.env_server import create_fastapi_app
 
@@ -29,11 +29,70 @@ def make_env() -> SOCEnvironment:
 app = create_fastapi_app(make_env, SOCAction, SOCObservation)
 
 
-# ROOT REDIRECT — judges see dashboard when they open the Space URL
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
-    """Redirect root to Gradio SOC dashboard."""
-    return RedirectResponse(url="/web")
+    """Embed Gradio dashboard directly at root via iframe."""
+    return """<!DOCTYPE html>
+<html style="height:100%;margin:0;padding:0;">
+<head>
+    <title>CyberSec-SOC-OpenEnv</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
+        .topbar {
+            background: #0d1a2d;
+            border-bottom: 2px solid #00ff88;
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            height: 40px;
+        }
+        .topbar h1 {
+            color: #00ff88;
+            font-family: monospace;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+        .topbar .links {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+        .topbar a {
+            color: #00aaff;
+            font-family: monospace;
+            font-size: 0.78rem;
+            padding: 3px 10px;
+            border: 1px solid #00aaff;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .topbar a:hover { background: #00aaff22; }
+        iframe {
+            width: 100%;
+            height: calc(100vh - 40px);
+            border: none;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <h1>🛡️ CyberSec-SOC-OpenEnv &nbsp;|&nbsp; AI Threat Defense Simulator</h1>
+        <div class="links">
+            <a href="/docs" target="_blank">API Docs</a>
+            <a href="/web" target="_blank">Full Screen</a>
+            <a href="https://github.com/FieroJain/cybersec-soc-env" target="_blank">GitHub</a>
+        </div>
+    </div>
+    <iframe
+        src="/web"
+        title="CyberSec SOC Command Center"
+        allow="same-origin"
+    ></iframe>
+</body>
+</html>"""
 
 
 def _run_grader_episode(env: SOCEnvironment) -> Dict[str, Any]:

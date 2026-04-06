@@ -17,7 +17,7 @@ from cybersec_soc_env import SOCEnv, SOCAction
 # Defaults set ONLY for API_BASE_URL and MODEL_NAME (NOT HF_TOKEN)
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME   = os.getenv("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
-HF_TOKEN     = os.getenv("HF_TOKEN")  # NO default - must be set by user
+HF_TOKEN     = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 ENV_URL      = os.getenv("ENV_URL", "https://Fieerawe-cybersec-soc-env.hf.space")
 
 BENCHMARK    = "cybersec-soc-env"
