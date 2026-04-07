@@ -96,8 +96,8 @@ def compute_score(rewards: List[float], defender_wins: bool, attack_stage: int) 
     if sum(rewards) > 0:
         score += 0.2
     if len(rewards) > 0:
-        score += 0.1 * min(1.0, max(0.0, rewards[-1] if rewards else 0))
-    return round(min(1.0, max(0.0, score)), 3)
+        score += 0.1 * min(0.999, max(0.001, rewards[-1] if rewards else 0))
+    return round(min(0.999, max(0.001, score)), 3)
 
 
 def run_task(env, task_level: str) -> dict:
