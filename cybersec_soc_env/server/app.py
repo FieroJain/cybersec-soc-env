@@ -151,7 +151,7 @@ def _compute_episode_score(result: Dict[str, Any], level: str) -> float:
         score += 0.1
     efficiency = 1.0 - (result["steps"] / max_steps)
     score += 0.1 * max(0.0, efficiency)
-    return round(min(1.0, max(0.0, score)), 3)
+    return round(min(0.999, max(0.001, score)), 3)
 
 
 @app.get("/tasks", response_class=JSONResponse)
