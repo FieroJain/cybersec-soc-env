@@ -158,7 +158,7 @@ def compute_score(result: dict) -> float:
         if result["business_impact"] < 0.5:
             score += 0.10
 
-    return round(min(1.0, max(0.0, score)), 3)
+    return round(min(0.999, max(0.001, score)), 3)
 
 
 def grade_task(task_level: str, n_episodes: int = 5) -> dict:
