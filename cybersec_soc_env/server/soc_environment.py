@@ -101,6 +101,10 @@ class SOCEnvironment(Environment):
         self._state: SOCState = SOCState()
         self._business_impact: float = 0.0
         self._episode_seed: int = seed
+        # Attacker adaptive state
+        self._attacker_last_action_step: int = 0
+        self._attacker_evasion_mode: bool = False
+        self._attacker_quiet_steps: int = 0
 
     # ── NETWORK GENERATION ────────────────────────────────────────────────────
 
@@ -212,6 +216,10 @@ class SOCEnvironment(Environment):
             task_level=self.task_level,
             topology_type=self._topology_type,
         )
+        # Reset attacker adaptive state each episode
+        self._attacker_last_action_step = 0
+        self._attacker_evasion_mode = False
+        self._attacker_quiet_steps = 0
 
         self._alerts_log.append(
             f"[t=0] New episode. Topology={self._topology_type}. "
@@ -388,23 +396,6 @@ class SOCEnvironment(Environment):
     # ── ATTACKER SIMULATION ───────────────────────────────────────────────────
 
     def _attacker_step(self) -> None:
-        """
-        Simulate one attacker tick using probabilistic lateral movement.
-
-        Spread probability per directed edge (src → dst):
-            p = 0.15 * (1 - dst.security_level)
-                     * (1 + src.vulnerabilities * 0.1)
-            if firewall_active: p *= 0.4
-            if dst.isolated:    p  = 0
-
-        Stage progression (MITRE ATT&CK inspired):
-            Stage 1 → 2  when auth_server is compromised.
-            Stage 2 → 3  when 2+ nodes are actively compromised.
-            Stage 3 → 4  when database_server or file_server is compromised.
-            Stage 4       increments the exfiltration timer each step.
-
-        Also generates false-alert noise on 5 % of non-compromised nodes.
-        """
         new_infections: list[int] = []
         for src in list(self._graph.nodes):
             src_data: dict = self._graph.nodes[src]
@@ -432,7 +423,6 @@ class SOCEnvironment(Environment):
                 f"node {dst} ({self._graph.nodes[dst]['type']})"
             )
 
-        # False-alert noise on non-compromised, non-isolated nodes.
         for nid in self._graph.nodes:
             nd: dict = self._graph.nodes[nid]
             if not nd["compromised"] and not nd["isolated"]:
@@ -442,10 +432,8 @@ class SOCEnvironment(Environment):
                         f"suspicious traffic (false positive)"
                     )
 
-        # Stage progression checks.
         active: list[int] = [
-            n
-            for n in self._graph.nodes
+            n for n in self._graph.nodes
             if self._graph.nodes[n]["compromised"]
             and not self._graph.nodes[n]["isolated"]
         ]
@@ -544,3 +532,5 @@ class SOCEnvironment(Environment):
             SOCState with all internal flags and counters.
         """
         return self._state
+
+

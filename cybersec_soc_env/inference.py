@@ -4,11 +4,21 @@ Follows the exact stdout format required by the hackathon:
   [START] task=<task> env=<env> model=<model>
   [STEP]  step=<n> action=<action> reward=<0.00> done=<true|false> error=<msg|null>
   [END]   success=<true|false> steps=<n> score=<0.000> rewards=<r1,r2,...>
+
+Fixes applied (April 2026 sprint):
+  1. parse_action() smart fallback — falls back to highest-alert unscanned node
+  2. Rolling action_history — last 5 actions injected into every LLM prompt
+  3. Capped observation — top-N nodes by priority, prevents LLM context overflow
+  4. Chain-of-thought system prompt — LLM reasons before acting
+  5. Score clamp — min(0.999, max(0.001, ...)) everywhere, never exactly 0 or 1
+  6. Confirmed-threat override — isolate immediately without LLM when threat visible
+  7. Auto-scan override — scan highest-alert unscanned node without LLM
+     LLM is only called when all nodes are scanned and strategy is needed
 """
 
 import os
 import json
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from openai import OpenAI
 from cybersec_soc_env import SOCEnv, SOCAction
 
@@ -52,67 +62,165 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
 
 
 # ---------------------------------------------------------------------------
-# SYSTEM PROMPT
+# SYSTEM PROMPT — chain-of-thought, only used when all nodes are scanned
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """You are a Security Operations Center (SOC) analyst.
-You must defend a network against a cyberattack.
-At each step you will see network node statuses and recent alerts.
+SYSTEM_PROMPT = """You are an expert Security Operations Center (SOC) analyst AI.
+You are defending an enterprise network against an active cyberattack.
 
-Choose ONE action from:
-- scan <node_id>   : reveal if a node is truly compromised
-- isolate <node_id>: disconnect a node from the network
-- patch <node_id>  : harden a node against attack
-- firewall         : deploy firewall to slow attacker
-- nothing          : do nothing
+At each step you will see:
+- Network node statuses (alert score, isolation status, scan history)
+- Current attack stage and recent SIEM alerts
+- Your last 5 actions (to avoid repeating ineffective moves)
 
-Reply with ONLY one line in this exact format:
+REASONING PROTOCOL:
+1. ASSESS: Which nodes have the highest alert scores? Which are unscanned?
+2. PRIORITISE: Confirmed compromised node → ISOLATE. High-alert unscanned → SCAN.
+   Fast spread → FIREWALL. All contained → PATCH weakest node.
+3. PICK: Choose the single best action.
+
+Your response MUST end with exactly one ACTION line:
 ACTION: <action_type> <node_id>
-Examples:
-ACTION: scan 3
-ACTION: isolate 7
-ACTION: firewall -1
-ACTION: nothing -1"""
+
+Valid actions:
+  scan <node_id>    — Reveal if node is truly compromised
+  isolate <node_id> — Disconnect a confirmed compromised node
+  patch <node_id>   — Harden a node against attack
+  firewall -1       — Deploy firewall for 10 steps
+  nothing -1        — Do nothing
+
+Example:
+ASSESS: Node 3 alert=0.82 unscanned. Node 1 confirmed compromised.
+PRIORITISE: Isolate confirmed node 1 first.
+ACTION: isolate 1"""
 
 
 # ---------------------------------------------------------------------------
 # HELPERS
 # ---------------------------------------------------------------------------
 
-def parse_action(text: str, num_nodes: int) -> SOCAction:
-    """Parse LLM response into SOCAction. Falls back safely."""
+def _pick_smart_fallback(node_statuses: List[Dict], scanned_nodes: set) -> SOCAction:
+    """Smart fallback — never blindly returns scan(0)."""
+    unscanned = [
+        n for n in node_statuses
+        if n["id"] not in scanned_nodes and not n["is_isolated"]
+    ]
+    if unscanned:
+        best = max(unscanned, key=lambda n: n["alert_score"])
+        return SOCAction(action_type="scan", target_node_id=int(best["id"]))
+
+    active = [n for n in node_statuses if not n["is_isolated"]]
+    if active:
+        best = max(active, key=lambda n: n["alert_score"])
+        return SOCAction(action_type="scan", target_node_id=int(best["id"]))
+
+    return SOCAction(action_type="firewall", target_node_id=-1)
+
+
+def parse_action(
+    text: str,
+    num_nodes: int,
+    node_statuses: List[Dict],
+    scanned_nodes: set,
+) -> SOCAction:
+    """Parse LLM response. Falls back to smart fallback on any failure."""
     try:
         for line in text.strip().split("\n"):
+            line = line.strip()
             if line.startswith("ACTION:"):
                 parts       = line.replace("ACTION:", "").strip().split()
                 action_type = parts[0].lower()
                 node_id     = int(parts[1]) if len(parts) > 1 else -1
+                if action_type not in ("scan", "isolate", "patch", "firewall", "nothing"):
+                    break
                 if action_type in ("scan", "isolate", "patch"):
                     node_id = max(0, min(node_id, num_nodes - 1))
                 return SOCAction(action_type=action_type, target_node_id=node_id)
     except Exception:
         pass
-    return SOCAction(action_type="scan", target_node_id=0)
+    return _pick_smart_fallback(node_statuses, scanned_nodes)
+
+
+def build_observation_text(obs: Any, action_history: List[str], scanned_nodes: set) -> str:
+    """
+    Build observation string for LLM.
+    Caps nodes shown to prevent context overflow on large networks.
+    """
+    nodes_sorted = sorted(
+        obs.node_statuses,
+        key=lambda n: (n["visible_compromise"], n["alert_score"]),
+        reverse=True,
+    )
+    # Cap: easy=5, medium=8, hard=10 — always include all confirmed threats
+    max_nodes = 5 if len(obs.node_statuses) <= 5 else (8 if len(obs.node_statuses) <= 10 else 10)
+    confirmed = [n for n in nodes_sorted if n["visible_compromise"]]
+    rest      = [n for n in nodes_sorted if not n["visible_compromise"]]
+    nodes_sorted = confirmed + rest[:max(0, max_nodes - len(confirmed))]
+
+    node_lines = []
+    for n in nodes_sorted:
+        flags = []
+        if n["visible_compromise"]:
+            flags.append("CONFIRMED_THREAT")
+        if n["is_isolated"]:
+            flags.append("ISOLATED")
+        if n["id"] in scanned_nodes and not n["visible_compromise"] and not n["is_isolated"]:
+            flags.append("SCANNED_CLEAN")
+        flag_str  = " | ".join(flags) if flags else ""
+        alert_tier = "HIGH" if n["alert_score"] > 0.6 else ("MED" if n["alert_score"] > 0.3 else "LOW")
+        node_lines.append(
+            f"  node={n['id']:2d} | {n['type']:16s} | alert={n['alert_score']:.3f}[{alert_tier}]"
+            f" | scanned={'YES' if n['id'] in scanned_nodes else 'NO'}"
+            f" | isolated={str(n['is_isolated']):5s} | asset={n['asset_value']:.1f}"
+            f" {flag_str}"
+        )
+
+    nodes_block  = "\n".join(node_lines)
+    alerts_block = "\n".join(f"  {a}" for a in (obs.alerts or [])[-5:]) or "  None"
+
+    if action_history:
+        history_block = "\n".join(
+            f"  t-{i+1}: {a}" for i, a in enumerate(reversed(action_history[-5:]))
+        )
+    else:
+        history_block = "  None yet"
+
+    stage_names = {
+        1: "Initial Compromise",
+        2: "Credential Access",
+        3: "Lateral Movement",
+        4: "EXFILTRATION ACTIVE",
+    }
+    stage_name = stage_names.get(obs.attack_stage, "Unknown")
+
+    return (
+        f"=== SOC STATUS (Timestep {obs.timestep}) ===\n"
+        f"Attack Stage: {obs.attack_stage}/4 — {stage_name}\n"
+        f"Topology: {obs.topology_type.upper()} | Nodes: {len(obs.node_statuses)}\n"
+        f"Business Disruption: {obs.business_impact_score:.2f}\n"
+        f"\n--- NODES (threats first, then by alert score) ---\n"
+        f"{nodes_block}\n"
+        f"\n--- RECENT ALERTS ---\n"
+        f"{alerts_block}\n"
+        f"\n--- YOUR LAST 5 ACTIONS ---\n"
+        f"{history_block}\n"
+        f"\n>>> Reason step-by-step then give ACTION line."
+    )
 
 
 def compute_score(rewards: List[float], defender_wins: bool, attack_stage: int) -> float:
-    """Compute normalised score strictly in (0, 1) — never exactly 0.0 or 1.0."""
+    """Normalised score strictly in (0.001, 0.999)."""
     score = 0.0
-
     if defender_wins:
         score += 0.5
-
     if attack_stage <= 2:
         score += 0.2
     elif attack_stage == 3:
         score += 0.1
-
-    if sum(rewards) > 0:
+    if rewards and sum(rewards) > 0:
         score += 0.2
-
     if rewards:
         score += 0.1 * min(0.999, max(0.001, rewards[-1]))
-
     return round(min(0.999, max(0.001, score)), 3)
 
 
@@ -121,17 +229,20 @@ def compute_score(rewards: List[float], defender_wins: bool, attack_stage: int) 
 # ---------------------------------------------------------------------------
 
 def run_task(env, task_level: str) -> dict:
-    """Run one episode for a task level with full [START][STEP][END] logging."""
+    """Run one episode with full [START][STEP][END] logging."""
     client    = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
     max_steps = MAX_STEPS[task_level]
 
     log_start(task=task_level, env=BENCHMARK, model=MODEL_NAME)
 
     rewards: List[float] = []
+    action_history: List[str] = []
+    scanned_nodes: set        = set()
+
     steps_taken   = 0
     defender_wins = False
     attack_stage  = 4
-    score         = 0.0
+    score         = 0.001
     success       = False
 
     try:
@@ -142,39 +253,62 @@ def run_task(env, task_level: str) -> dict:
             if obs.done:
                 break
 
-            # Build observation summary for LLM
-            high_alert = [
-                n for n in obs.node_statuses
-                if n["alert_score"] > 0.5 and not n["is_isolated"]
-            ]
-            obs_text = (
-                f"TIMESTEP: {obs.timestep} | "
-                f"ATTACK STAGE: {obs.attack_stage}/4 | "
-                f"TOPOLOGY: {obs.topology_type} | "
-                f"HIGH ALERT NODES: {json.dumps(high_alert[:3])} | "
-                f"ALERTS: {obs.alerts[-2:]}"
-            )
+            error_msg = None
 
-            # Get LLM action
-            error_msg  = None
-            action_str = "scan(0)"
-            try:
-                response = client.chat.completions.create(
-                    model=MODEL_NAME,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user",   "content": obs_text},
-                    ],
-                    max_tokens=20,
-                    temperature=0.1,
-                )
-                action_text = response.choices[0].message.content or ""
-                action      = parse_action(action_text, len(obs.node_statuses))
-                action_str  = f"{action.action_type}({action.target_node_id})"
-            except Exception as e:
-                error_msg  = str(e)[:50]
-                action     = SOCAction(action_type="scan", target_node_id=0)
-                action_str = "scan(0)"
+            # ── OVERRIDE 1: isolate confirmed threats immediately ──────────
+            confirmed_threats = [
+                n for n in obs.node_statuses
+                if n["visible_compromise"] and not n["is_isolated"]
+            ]
+            if confirmed_threats:
+                best       = max(confirmed_threats, key=lambda n: n["asset_value"])
+                action     = SOCAction(action_type="isolate", target_node_id=int(best["id"]))
+                action_str = f"isolate({best['id']})[override]"
+
+            else:
+                # ── OVERRIDE 2: scan highest-alert unscanned node ──────────
+                unscanned = [
+                    n for n in obs.node_statuses
+                    if n["id"] not in scanned_nodes and not n["is_isolated"]
+                ]
+                if unscanned:
+                    best       = max(unscanned, key=lambda n: n["alert_score"])
+                    action     = SOCAction(action_type="scan", target_node_id=int(best["id"]))
+                    action_str = f"scan({best['id']})[auto]"
+
+                else:
+                    # ── LLM: all nodes scanned, need strategic decision ────
+                    obs_text   = build_observation_text(obs, action_history, scanned_nodes)
+                    action_str = None
+                    action     = None
+                    try:
+                        response = client.chat.completions.create(
+                            model=MODEL_NAME,
+                            messages=[
+                                {"role": "system", "content": SYSTEM_PROMPT},
+                                {"role": "user",   "content": obs_text},
+                            ],
+                            max_tokens=150,
+                            temperature=0.2,
+                        )
+                        action_text = response.choices[0].message.content or ""
+                        action      = parse_action(
+                            action_text,
+                            len(obs.node_statuses),
+                            obs.node_statuses,
+                            scanned_nodes,
+                        )
+                        action_str = f"{action.action_type}({action.target_node_id})"
+                    except Exception as e:
+                        error_msg  = str(e)[:80]
+                        action     = _pick_smart_fallback(obs.node_statuses, scanned_nodes)
+                        action_str = f"{action.action_type}({action.target_node_id})[fallback]"
+
+            # Track scanned nodes
+            if action.action_type == "scan" and action.target_node_id >= 0:
+                scanned_nodes.add(action.target_node_id)
+
+            action_history.append(action_str)
 
             # Step environment
             step_result = env.step(action)
@@ -224,7 +358,11 @@ def main() -> None:
 
     overall = round(sum(all_scores.values()) / len(all_scores), 3)
     with open("baseline_scores.json", "w") as f:
-        json.dump({"model": MODEL_NAME, "scores": all_scores, "overall": overall}, f, indent=2)
+        json.dump(
+            {"model": MODEL_NAME, "scores": all_scores, "overall": overall},
+            f,
+            indent=2,
+        )
 
 
 if __name__ == "__main__":
