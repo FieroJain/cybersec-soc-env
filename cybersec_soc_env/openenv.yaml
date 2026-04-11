@@ -1,5 +1,5 @@
 name: cybersec-soc-env
-version: "0.1.0"
+version: "0.2.0"
 description: >
   SOC analyst RL environment. AI agent defends a procedurally generated
   enterprise network against a MITRE ATT&CK inspired multi-stage
@@ -47,3 +47,55 @@ reward:
   attacker_contained_win: +5.0
   exfiltration_complete_loss: -5.0
   perfect_containment_bonus: +2.0
+
+# Evaluation rubrics — used by /tasks/{id}/grade endpoint and leaderboard
+rubrics:
+  - metric: containment_rate
+    description: >
+      Fraction of episodes where all active threats are isolated before the
+      step limit or exfiltration timer. Primary success signal.
+    weight: 0.5
+    range: [0.0, 1.0]
+    higher_is_better: true
+
+  - metric: response_time
+    description: >
+      Average number of steps from episode start to first successful
+      isolation of a confirmed (scanned) compromised node. Lower is better.
+    weight: 0.3
+    range: [1, max_steps]
+    higher_is_better: false
+
+  - metric: false_positive_rate
+    description: >
+      Fraction of isolate actions that targeted a node that was not
+      confirmed compromised at the time of isolation. Penalises over-isolation
+      of high-value nodes (business disruption).
+    weight: 0.2
+    range: [0.0, 1.0]
+    higher_is_better: false
+
+baselines:
+  rule_based_agent:
+    description: >
+      Greedy rule-based agent: always isolates the highest-alert confirmed
+      node, scans the highest-alert unscanned node if none confirmed.
+    easy_score: 0.612
+    medium_score: 0.588
+    hard_score: 0.531
+
+  llm_agent_v1:
+    description: >
+      LLM agent (Llama-3.1-8B-Instruct) with broken action parser —
+      looped on scan(0). Pre-fix baseline for comparison.
+    easy_score: 0.173
+    medium_score: 0.441
+    hard_score: 0.703
+
+  llm_agent_v2:
+    description: >
+      LLM agent (Llama-3.1-8B-Instruct) with fixed parser, action history,
+      rich observation, and chain-of-thought prompt (v0.2.0).
+    easy_score: null   # to be updated after first run
+    medium_score: null
+    hard_score: null

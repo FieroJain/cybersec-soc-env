@@ -16,6 +16,7 @@ Features:
 
 import uuid
 from typing import Optional
+import time
 
 import networkx as nx
 import numpy as np
@@ -185,7 +186,8 @@ class SOCEnvironment(Environment):
             SOCObservation with reward=0.0 and done=False.
         """
         self._episode_seed = int(self.rng.integers(0, 2 ** 31))
-        self.rng = np.random.default_rng(self._episode_seed)
+        
+        self.rng = np.random.default_rng(int(time.time() * 1000) % (2**31))
 
         cfg: dict = TASK_CONFIG[self.task_level]
         n: int = cfg["nodes"]

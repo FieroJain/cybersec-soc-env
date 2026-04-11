@@ -9,10 +9,16 @@ Mounted via:
 
 Features:
   - Live networkx/matplotlib network topology graph (dark theme, glowing nodes)
+  - Node colors: green (scanned+clean), red (confirmed threat), orange (isolated),
+    yellow-amber (high alert / suspicious), dark blue (unknown), grey-purple (scanned/clean)
+  - Kill chain stage progress bar with MITRE ATT&CK stage labels
+  - Business impact colour-coded badge
+  - Connection count shown in node labels (id / #connections)
   - Control panel: Reset | Scan | Isolate | Patch | Firewall | Nothing
-  - Live stats panel: attack stage, business impact, timestep, threats
-  - SIEM-style scrolling alert feed
-  - Episode score with colour-coded reward
+  - Live stats panel with attack stage bar, biz impact, threat counts
+  - SIEM-style scrolling alert feed with severity prefixes
+  - Episode score with colour-coded reward display
+  - "Run AI Demo" button that auto-runs 5 rule-based steps and streams results
 """
 
 from __future__ import annotations
@@ -37,13 +43,14 @@ _env:  Optional[SOCEnvironment]  = None
 _obs:  Optional[SOCObservation]  = None
 _total_reward: float             = 0.0
 _graph_pos:    Optional[dict]    = None   # spring-layout cache
+_step_count:   int               = 0
 
 # ── Attack stage label mapping ─────────────────────────────────────────────────
 _STAGE = {
-    1: ("🟡", "Initial Compromise"),
-    2: ("🟠", "Credential Access"),
-    3: ("🔴", "Lateral Movement"),
-    4: ("💀", "Exfiltration"),
+    1: ("🟡", "Initial Compromise",  "#ffcc00"),
+    2: ("🟠", "Credential Access",   "#ff8800"),
+    3: ("🔴", "Lateral Movement",    "#ff3300"),
+    4: ("💀", "Exfiltration",        "#cc0055"),
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -91,39 +98,52 @@ def _draw_network() -> plt.Figure:
 
     true_compromised = set(_env.state.true_compromised)
 
-    # ── Per-node colours ───────────────────────────────────────────────────────
-    node_colors  = []
+    # ── Build per-node status ──────────────────────────────────────────────────
+    node_colors   = []
     border_colors = []
-    node_sizes   = []
+    node_sizes    = []
+    node_labels   = {}
 
     for nid in G.nodes:
-        nd   = G.nodes[nid]
-        size = 900 + int(nd["asset_value"] * 1600)
+        nd    = G.nodes[nid]
+        # Connection count (in + out degree, deduplicated)
+        conn_count = G.degree(nid)
+        size  = 900 + int(nd["asset_value"] * 1600)
         node_sizes.append(size)
 
-        isolated = nd["isolated"]
+        isolated    = nd["isolated"]
         compromised = nid in true_compromised
-        scanned  = nd.get("scanned", False)
-        alert_s  = float(_obs.node_statuses[nid]["alert_score"] if nid < len(_obs.node_statuses) else 0.5)
+        scanned     = nd.get("scanned", False)
 
+        # Alert score from obs (handle index mismatch gracefully)
+        obs_node = next(
+            (n for n in _obs.node_statuses if n["id"] == nid), None
+        )
+        alert_s = float(obs_node["alert_score"]) if obs_node else 0.5
+
+        # Color logic: isolated=orange, confirmed_threat=red, hidden_threat=dark-red,
+        #              scanned_clean=teal-green, suspicious=amber, unknown=dark-blue
         if isolated:
             node_colors.append("#d06000")
             border_colors.append("#ff9933")
         elif compromised and scanned:      # detected active threat
             node_colors.append("#cc0022")
             border_colors.append("#ff3355")
-        elif compromised:                  # hidden threat
+        elif compromised:                  # hidden threat (unknown to agent)
             node_colors.append("#660011")
             border_colors.append("#990022")
-        elif scanned:                      # confirmed clean
-            node_colors.append("#006688")
-            border_colors.append("#00ccff")
-        elif alert_s > 0.5:               # high alert — suspicious
+        elif scanned and not compromised:  # confirmed clean — green
+            node_colors.append("#004422")
+            border_colors.append("#00cc66")
+        elif alert_s > 0.5:               # high alert — suspicious amber
             node_colors.append("#4a3000")
             border_colors.append("#cc8800")
-        else:                             # unknown
+        else:                             # unknown — dark blue
             node_colors.append("#152535")
             border_colors.append("#1e4060")
+
+        # Label: node ID + connection count
+        node_labels[nid] = f"{nid}\n[{conn_count}]"
 
     # ── Draw edges ─────────────────────────────────────────────────────────────
     if len(G.edges) > 0:
@@ -150,12 +170,12 @@ def _draw_network() -> plt.Figure:
         linewidths=1.8,
     )
 
-    # ── Labels ─────────────────────────────────────────────────────────────────
+    # ── Labels (id + connection count) ────────────────────────────────────────
     nx.draw_networkx_labels(
         G, pos,
-        labels={nid: str(nid) for nid in G.nodes},
+        labels=node_labels,
         ax=ax,
-        font_color="#ffffff", font_size=8,
+        font_color="#ffffff", font_size=6.5,
         font_weight="bold", font_family="monospace",
     )
 
@@ -165,7 +185,7 @@ def _draw_network() -> plt.Figure:
         mpatches.Patch(facecolor="#cc0022", edgecolor="#ff3355", label="Detected threat"),
         mpatches.Patch(facecolor="#d06000", edgecolor="#ff9933", label="Isolated"),
         mpatches.Patch(facecolor="#4a3000", edgecolor="#cc8800", label="Suspicious"),
-        mpatches.Patch(facecolor="#006688", edgecolor="#00ccff", label="Scanned / clean"),
+        mpatches.Patch(facecolor="#004422", edgecolor="#00cc66", label="Scanned / clean"),
         mpatches.Patch(facecolor="#152535", edgecolor="#1e4060", label="Unknown"),
     ]
     ax.legend(
@@ -174,16 +194,34 @@ def _draw_network() -> plt.Figure:
         labelcolor="#90b0c8", fontsize=7.5, framealpha=0.92,
     )
 
-    # ── Title ──────────────────────────────────────────────────────────────────
-    stage_emoji, stage_name = _STAGE.get(_obs.attack_stage, ("❓", "Unknown"))
+    # ── Title with MITRE stage ─────────────────────────────────────────────────
+    stage_info = _STAGE.get(_obs.attack_stage, ("❓", "Unknown", "#888888"))
+    stage_emoji, stage_name, stage_color = stage_info
     ax.set_title(
         f"Topology: {_obs.topology_type.upper()}   |   "
         f"Nodes: {len(G.nodes)}   |   "
-        f"Stage {_obs.attack_stage}: {stage_emoji} {stage_name}",
-        color="#00aaff", fontsize=10, fontfamily="monospace",
+        f"Stage {_obs.attack_stage}/4: {stage_emoji} {stage_name}",
+        color=stage_color, fontsize=10, fontfamily="monospace",
         fontweight="bold", pad=12,
     )
     ax.axis("off")
+
+    # ── Kill chain stage progress bar (drawn as text annotation) ──────────────
+    stages_bar = ""
+    for i in range(1, 5):
+        si = _STAGE.get(i, ("?", "?", "#888"))
+        em, nm, clr = si
+        if i == _obs.attack_stage:
+            stages_bar += f"[{em}{nm}]"
+        else:
+            stages_bar += f"·{em}·"
+    fig.text(
+        0.5, 0.01, stages_bar,
+        ha="center", va="bottom",
+        color="#446688", fontsize=7, fontfamily="monospace",
+        style="italic",
+    )
+
     fig.tight_layout(pad=1.2)
     return fig
 
@@ -206,20 +244,31 @@ def _format_stats() -> str:
             "```"
         )
 
-    stage        = _obs.attack_stage
-    s_emoji, s_name = _STAGE.get(stage, ("❓", "Unknown"))
-    stage_bar    = "█" * stage + "░" * (4 - stage)
+    stage           = _obs.attack_stage
+    s_emoji, s_name, s_color = _STAGE.get(stage, ("❓", "Unknown", "#888888"))
+    stage_bar       = "█" * stage + "░" * (4 - stage)
 
     visible_threats = sum(1 for n in _obs.node_statuses if n["visible_compromise"])
     isolated_count  = sum(1 for n in _obs.node_statuses if n["is_isolated"])
     true_threats    = len(_env.state.true_compromised) if _env else 0
+
+    # Business impact colour badge
+    biz = _obs.business_impact_score
+    if biz < 0.5:
+        biz_icon = "🟢"
+    elif biz < 1.5:
+        biz_icon = "🟡"
+    elif biz < 3.0:
+        biz_icon = "🟠"
+    else:
+        biz_icon = "🔴"
 
     if _obs.done and _obs.defender_wins:
         status_line = "### 🏆 DEFENDER WINS"
     elif _obs.done:
         status_line = "### 💀 ATTACKER WINS"
     else:
-        active = true_threats > 0
+        active      = true_threats > 0
         status_line = f"### ⚔️ {'Battle active' if active else 'Network secure'}"
 
     reward_sign = "▲" if _total_reward >= 0 else "▼"
@@ -234,7 +283,7 @@ def _format_stats() -> str:
 | Metric              | Value |
 |---------------------|-------|
 | ⏱ Timestep         | `{_obs.timestep}` |
-| 💰 Biz Impact       | `{_obs.business_impact_score:.2f}` |
+| {biz_icon} Biz Impact     | `{biz:.2f}` |
 | 🔴 Active Threats   | `{true_threats}` |
 | 👁 Detected         | `{visible_threats}` |
 | 🔒 Isolated         | `{isolated_count}` |
@@ -303,17 +352,18 @@ def _all_outputs():
 
 
 def do_reset(task_level: str):
-    global _env, _obs, _total_reward, _graph_pos
+    global _env, _obs, _total_reward, _graph_pos, _step_count
     with _lock:
         _env          = SOCEnvironment(task_level=task_level, seed=42)
         _obs          = _env.reset()
         _total_reward = 0.0
         _graph_pos    = None   # fresh spring-layout for new topology
+        _step_count   = 0
     return _all_outputs()
 
 
 def _do_step(action_type: str, node_id: int):
-    global _env, _obs, _total_reward
+    global _env, _obs, _total_reward, _step_count
     if _env is None or (_obs is not None and _obs.done):
         return _all_outputs()
     with _lock:
@@ -321,6 +371,7 @@ def _do_step(action_type: str, node_id: int):
         _obs   = _env.step(action)
         if _obs.reward is not None:
             _total_reward += float(_obs.reward)
+        _step_count += 1
     return _all_outputs()
 
 
@@ -329,6 +380,55 @@ def do_isolate(node_id): return _do_step("isolate",  int(node_id or 0))
 def do_patch(node_id):   return _do_step("patch",    int(node_id or 0))
 def do_firewall():       return _do_step("firewall", -1)
 def do_nothing():        return _do_step("nothing",  -1)
+
+
+def do_ai_demo(task_level: str):
+    """
+    Auto-run 5 steps of the rule-based greedy agent and stream into dashboard.
+    Judges can click this to see the environment working without manual input.
+    """
+    global _env, _obs, _total_reward, _graph_pos, _step_count
+
+    with _lock:
+        # Reset with deterministic seed for consistency
+        _env          = SOCEnvironment(task_level=task_level, seed=42)
+        _obs          = _env.reset()
+        _total_reward = 0.0
+        _graph_pos    = None
+        _step_count   = 0
+
+    scanned_ids: set = set()
+
+    for _ in range(10):  # run up to 10 auto-steps
+        if _obs is None or _obs.done:
+            break
+
+        with _lock:
+            # Rule-based greedy: isolate confirmed → scan high-alert unscanned
+            candidates = sorted(
+                [n for n in _obs.node_statuses if not n["is_isolated"]],
+                key=lambda n: (n["visible_compromise"], n["alert_score"]),
+                reverse=True,
+            )
+
+            action = SOCAction(action_type="nothing", target_node_id=-1)
+            for node in candidates:
+                if node["visible_compromise"]:
+                    action = SOCAction(action_type="isolate", target_node_id=int(node["id"]))
+                    break
+                if node["alert_score"] > 0.4 and node["id"] not in scanned_ids:
+                    action = SOCAction(action_type="scan", target_node_id=int(node["id"]))
+                    break
+
+            if action.action_type == "scan":
+                scanned_ids.add(action.target_node_id)
+
+            _obs = _env.step(action)
+            if _obs.reward is not None:
+                _total_reward += float(_obs.reward)
+            _step_count += 1
+
+    return _all_outputs()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -366,6 +466,8 @@ button.lg { font-family: 'Courier New', monospace !important; font-weight: 700 !
 .btn-fw     button.lg { background: #160a28 !important; border: 1px solid #7744cc !important; color: #bb88ff !important; }
 .btn-fw     button.lg:hover { background: #1e0f38 !important; box-shadow: 0 0 10px #7744cc44 !important; }
 .btn-noop   button.lg { background: #141422 !important; border: 1px solid #334466 !important; color: #7788aa !important; }
+.btn-demo   button.lg { background: #1a1a00 !important; border: 1px solid #aaaa00 !important; color: #ffff44 !important; }
+.btn-demo   button.lg:hover { background: #252500 !important; box-shadow: 0 0 10px #aaaa0044 !important; }
 
 /* ── Inputs ─────────────────────────────────────────────────────── */
 input, textarea, select {
@@ -436,6 +538,10 @@ with gr.Blocks(
         <p style="color:#346080;font-size:0.84em;margin:4px 0 0;letter-spacing:0.05em;">
             AI-Powered Security Operations Center &nbsp;·&nbsp; Real-time Threat Defense Simulator
         </p>
+        <p style="color:#223344;font-size:0.72em;margin:3px 0 0;font-family:monospace;">
+            Node labels: ID / [connections] &nbsp;·&nbsp;
+            🟢 clean &nbsp;🔴 threat &nbsp;🟠 isolated &nbsp;🟡 suspicious
+        </p>
     </div>
     """)
 
@@ -464,6 +570,11 @@ with gr.Blocks(
                 elem_classes=["btn-reset"],
                 size="lg",
             )
+            demo_btn = gr.Button(
+                "🤖 RUN AI DEMO (10 steps)",
+                elem_classes=["btn-demo"],
+                size="lg",
+            )
 
             gr.HTML("<hr style='border-color:#1e3a5f;margin:10px 0'>")
             gr.HTML("<div style='color:#4488aa;font-family:monospace;font-size:0.8em;"
@@ -488,9 +599,10 @@ with gr.Blocks(
             <div style='margin-top:10px;padding:8px;border:1px solid #1a3040;
                         border-radius:6px;background:#080f18'>
                 <div style='color:#336655;font-size:0.72em;font-family:monospace;line-height:1.7'>
-                💡 <b style='color:#447755'>Tip:</b> Scan → then Isolate confirmed<br>
+                💡 <b style='color:#447755'>Strategy:</b> Scan → Confirm → Isolate<br>
                 🔥 Firewall halves spread for 10 steps<br>
-                ⚠ Isolating unscanned nodes costs BIZ
+                ⚠ Isolating unscanned nodes costs BIZ<br>
+                🤖 AI Demo runs 10 greedy rule steps
                 </div>
             </div>
             """)
@@ -542,13 +654,16 @@ with gr.Blocks(
         background:#080f18;border-radius:0 0 8px 8px;
     '>
         <span style='color:#1e4a60;font-family:monospace;font-size:0.72em'>
-            🌐 ENV: <span style='color:#2a6a8a'>localhost:8000</span>
+            🌐 ENV: <span style='color:#2a6a8a'>localhost:7860</span>
         </span>
         <span style='color:#1e4a60;font-family:monospace;font-size:0.72em'>
             📡 PROTOCOL: <span style='color:#2a6a8a'>Direct (in-process)</span>
         </span>
         <span style='color:#1e4a60;font-family:monospace;font-size:0.72em'>
-            🛡 CyberSec-SOC-OpenEnv · OpenEnv v0.2.3
+            🛡 CyberSec-SOC-OpenEnv · v0.2.0
+        </span>
+        <span style='color:#1e4a60;font-family:monospace;font-size:0.72em;margin-left:auto'>
+            🤖 AI Demo: hit /demo for full JSON trajectory
         </span>
     </div>
     """)
@@ -556,9 +671,10 @@ with gr.Blocks(
     # ── Event wiring ───────────────────────────────────────────────────────────
     _outs = [graph_out, stats_md, alerts_box, score_html]
 
-    reset_btn.click(fn=do_reset,    inputs=[task_dd],  outputs=_outs)
-    scan_btn.click( fn=do_scan,     inputs=[node_inp], outputs=_outs)
-    iso_btn.click(  fn=do_isolate,  inputs=[node_inp], outputs=_outs)
-    patch_btn.click(fn=do_patch,    inputs=[node_inp], outputs=_outs)
-    fw_btn.click(   fn=do_firewall, inputs=[],         outputs=_outs)
-    nothing_btn.click(fn=do_nothing,inputs=[],         outputs=_outs)
+    reset_btn.click(  fn=do_reset,    inputs=[task_dd],  outputs=_outs)
+    demo_btn.click(   fn=do_ai_demo,  inputs=[task_dd],  outputs=_outs)
+    scan_btn.click(   fn=do_scan,     inputs=[node_inp], outputs=_outs)
+    iso_btn.click(    fn=do_isolate,  inputs=[node_inp], outputs=_outs)
+    patch_btn.click(  fn=do_patch,    inputs=[node_inp], outputs=_outs)
+    fw_btn.click(     fn=do_firewall, inputs=[],         outputs=_outs)
+    nothing_btn.click(fn=do_nothing,  inputs=[],         outputs=_outs)
