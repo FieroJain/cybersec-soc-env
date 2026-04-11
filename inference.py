@@ -170,6 +170,13 @@ def build_observation_text(obs: Any, action_history: List[str]) -> str:
         key=lambda n: (n["visible_compromise"], n["alert_score"]),
         reverse=True,
     )
+    # Cap nodes shown to LLM — prevents context overflow on large networks
+    max_nodes = 5 if len(obs.node_statuses) <= 5 else (8 if len(obs.node_statuses) <= 10 else 10)
+    confirmed = [n for n in nodes_sorted if n["visible_compromise"]]
+    rest = [n for n in nodes_sorted if not n["visible_compromise"]]
+    nodes_sorted = confirmed + rest[:max(0, max_nodes - len(confirmed))]
+    # Build per-node summary lines
+    node_lines = []
 
     # Build per-node summary lines
     node_lines = []
