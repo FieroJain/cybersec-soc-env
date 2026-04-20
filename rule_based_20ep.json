@@ -1,0 +1,608 @@
+{
+  "easy": [
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.88,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.88,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "easy",
+      "score": 0.99,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 2.0,
+        "false_isolations": 0
+      }
+    }
+  ],
+  "medium": [
+    {
+      "task_id": "medium",
+      "score": 0.789,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.789,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.689,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.889,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.286,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.889,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.689,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.183,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 6.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.889,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.689,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.186,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.286,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.286,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.286,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.286,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.889,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.689,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.689,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.689,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "medium",
+      "score": 0.889,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 4.0,
+        "false_isolations": 0
+      }
+    }
+  ],
+  "hard": [
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.19,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.19,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.19,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.19,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.788,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 6.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.19,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.784,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 1.0,
+        "avg_steps": 8.0,
+        "false_isolations": 0
+      }
+    },
+    {
+      "task_id": "hard",
+      "score": 0.29,
+      "episodes_run": 1,
+      "details": {
+        "containment_rate": 0.0,
+        "avg_steps": 5.0,
+        "false_isolations": 0
+      }
+    }
+  ]
+}
