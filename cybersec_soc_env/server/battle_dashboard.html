@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberSec-SOC — Red vs Blue Live Battle</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #ef4444;
+    --red-dim: #7f1d1d;
+    --red-glow: rgba(239,68,68,0.15);
+    --blue: #3b82f6;
+    --blue-dim: #1e3a8a;
+    --blue-glow: rgba(59,130,246,0.15);
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --bg: #080c10;
+    --bg2: #0d1117;
+    --bg3: #161b22;
+    --border: rgba(255,255,255,0.08);
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .header {
+    padding: 1.5rem 2rem 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: var(--sans);
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .logo span.red { color: var(--red); }
+  .logo span.blue { color: var(--blue); }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.7rem;
+    color: var(--text2);
+  }
+
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+  }
+  .dot.live { background: var(--green); animation: pulse 2s infinite; }
+  .dot.red  { background: var(--red); }
+  .dot.blue { background: var(--blue); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: auto 1fr;
+    gap: 1px;
+    height: calc(100vh - 65px);
+    background: var(--border);
+  }
+
+  .panel {
+    background: var(--bg);
+    padding: 1.25rem;
+    overflow: hidden;
+  }
+
+  .panel-title {
+    font-family: var(--sans);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Network visualization */
+  .network-panel {
+    grid-row: 1 / 3;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  #network-svg {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+  }
+
+  /* Stats bar */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    color: var(--text2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .stat-value {
+    font-family: var(--sans);
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .stat-value.red   { color: var(--red); }
+  .stat-value.blue  { color: var(--blue); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.amber { color: var(--amber); }
+
+  /* Log panels */
+  .log-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .log-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 200px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .log-entry {
+    font-size: 0.68rem;
+    line-height: 1.5;
+    padding: 5px 8px;
+    border-radius: 4px;
+    border-left: 2px solid transparent;
+    opacity: 0;
+    transform: translateX(-8px);
+    animation: slideIn 0.3s ease forwards;
+  }
+
+  @keyframes slideIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .log-entry.red-log {
+    background: var(--red-glow);
+    border-left-color: var(--red);
+    color: #fca5a5;
+  }
+
+  .log-entry.blue-log {
+    background: var(--blue-glow);
+    border-left-color: var(--blue);
+    color: #93c5fd;
+  }
+
+  .log-entry.system-log {
+    background: rgba(255,255,255,0.03);
+    border-left-color: var(--text2);
+    color: var(--text2);
+  }
+
+  .log-step {
+    font-weight: 700;
+    margin-right: 6px;
+  }
+
+  /* Battle progress bar */
+  .progress-wrap {
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    border: 1px solid;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+  }
+
+  .btn-primary:hover { background: #2563eb; }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text2);
+  }
+
+  .btn-secondary:hover { border-color: var(--text2); color: var(--text); }
+
+  .btn-danger {
+    background: transparent;
+    border-color: var(--red-dim);
+    color: var(--red);
+  }
+
+  .btn-danger:hover { background: var(--red-glow); }
+
+  /* Result banner */
+  .result-banner {
+    display: none;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1rem;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .result-banner.blue-win {
+    background: var(--blue-glow);
+    border: 1px solid var(--blue);
+    color: var(--blue);
+  }
+
+  .result-banner.red-win {
+    background: var(--red-glow);
+    border: 1px solid var(--red);
+    color: var(--red);
+  }
+
+  /* Topology badge */
+  .topo-badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 100px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Research panel */
+  .research-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 1rem;
+  }
+
+  .topo-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.6rem;
+  }
+
+  .topo-card-name {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text2);
+    margin-bottom: 4px;
+  }
+
+  .topo-bar-bg {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    margin-bottom: 4px;
+    overflow: hidden;
+  }
+
+  .topo-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+  }
+
+  .topo-pct {
+    font-family: var(--sans);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .finding-box {
+    background: var(--bg3);
+    border: 1px solid var(--amber);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-size: 0.68rem;
+    line-height: 1.6;
+    color: var(--text2);
+  }
+
+  .finding-box strong {
+    color: var(--amber);
+    font-weight: 600;
+  }
+
+  /* Node tooltip */
+  .tooltip {
+    position: fixed;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.65rem;
+    line-height: 1.6;
+    pointer-events: none;
+    z-index: 999;
+    display: none;
+    max-width: 200px;
+  }
+
+  /* Loading state */
+  .loading-text {
+    font-size: 0.7rem;
+    color: var(--text2);
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0.3; } }
+
+  .theme-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .theme-tag {
+    font-size: 0.58rem;
+    padding: 2px 7px;
+    border-radius: 100px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .theme-tag.t1 { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .theme-tag.t2 { background: rgba(34,197,94,0.12); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+  .theme-tag.t3 { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+  .theme-tag.t4 { background: rgba(168,85,247,0.12); color: #c084fc; border: 1px solid rgba(168,85,247,0.25); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <span class="red">RED</span> vs <span class="blue">BLUE</span>
+    &nbsp;·&nbsp; CyberSec-SOC-OpenEnv
+  </div>
+  <div class="status-bar">
+    <span><span class="dot live"></span>Live</span>
+    <span id="topo-badge" class="topo-badge">—</span>
+    <span id="step-counter" style="color:var(--text2)">Step 0</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LEFT: Network + logs -->
+  <div class="panel network-panel">
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Attack Stage</div>
+        <div class="stat-value amber" id="stat-stage">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Threats</div>
+        <div class="stat-value red" id="stat-threats">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Isolated</div>
+        <div class="stat-value blue" id="stat-isolated">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Biz Impact</div>
+        <div class="stat-value green" id="stat-impact">—</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progress-bar" style="width:0%;background:var(--blue)"></div>
+    </div>
+
+    <div id="result-banner" class="result-banner"></div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="btn-start" onclick="startBattle()">
+        ▶ Start Battle
+      </button>
+      <button class="btn btn-secondary" onclick="resetBattle()">
+        ↺ Reset
+      </button>
+      <select id="task-select" style="font-family:var(--mono);font-size:0.7rem;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:5px;padding:0.5rem 0.75rem;cursor:pointer;">
+        <option value="easy">Easy — 5 nodes</option>
+        <option value="medium" selected>Medium — 10 nodes</option>
+        <option value="hard">Hard — 20 nodes</option>
+      </select>
+    </div>
+
+    <svg id="network-svg" viewBox="0 0 600 340"></svg>
+
+    <!-- Log area -->
+    <div class="panel-title" style="margin-top:0.75rem">
+      <span class="dot red"></span>Red Team
+      &nbsp;&nbsp;
+      <span class="dot blue"></span>Blue Team
+      — Live Reasoning
+    </div>
+    <div class="log-scroll" id="log-scroll"></div>
+
+  </div>
+
+  <!-- RIGHT: Research + theme coverage -->
+  <div class="panel" style="overflow-y:auto;display:flex;flex-direction:column;gap:1rem;">
+
+    <div>
+      <div class="panel-title">Research Finding</div>
+      <div class="research-grid">
+        <div class="topo-card">
+          <div class="topo-card-name">Mesh</div>
+          <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:86%;background:#22c55e"></div></div>
+          <div class="topo-pct" style="color:#22c55e">86%</div>
+        </div>
+        <div class="topo-card">
+          <div class="topo-card-name">Star</div>
+          <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:73%;background:#3b82f6"></div></div>
+          <div class="topo-pct" style="color:#3b82f6">73%</div>
+        </div>
+        <div class="topo-card">
+          <div class="topo-card-name">Hierarchical</div>
+          <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:44%;background:#f59e0b"></div></div>
+          <div class="topo-pct" style="color:#f59e0b">44%</div>
+        </div>
+        <div class="topo-card">
+          <div class="topo-card-name">Segmented</div>
+          <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:0%;background:#ef4444"></div></div>
+          <div class="topo-pct" style="color:#ef4444">0%</div>
+        </div>
+      </div>
+      <div class="finding-box">
+        <strong>3.33× performance gap.</strong> Same agent, same task.
+        Network topology predicts AI defender success more than
+        agent intelligence. Reproducible at <strong>/research</strong>.
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-title">Theme Coverage</div>
+      <div class="theme-tags">
+        <span class="theme-tag t1">Multi-Agent</span>
+        <span class="theme-tag t2">Long-Horizon</span>
+        <span class="theme-tag t3">World Modeling</span>
+        <span class="theme-tag t4">Self-Improving</span>
+        <span class="theme-tag t1">Fleet AI Bonus</span>
+        <span class="theme-tag t3">Patronus Bonus</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-title">Live Endpoints</div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <a href="/multiagent" target="_blank" style="font-size:0.65rem;color:var(--blue);text-decoration:none;padding:4px 8px;background:var(--blue-glow);border-radius:4px;border:1px solid rgba(59,130,246,0.2);">/multiagent — Red vs Blue battle</a>
+        <a href="/oversight" target="_blank" style="font-size:0.65rem;color:#a78bfa;text-decoration:none;padding:4px 8px;background:rgba(167,139,250,0.08);border-radius:4px;border:1px solid rgba(167,139,250,0.2);">/oversight — Auditor confidence scores</a>
+        <a href="/research" target="_blank" style="font-size:0.65rem;color:var(--amber);text-decoration:none;padding:4px 8px;background:rgba(245,158,11,0.08);border-radius:4px;border:1px solid rgba(245,158,11,0.2);">/research — Topology finding data</a>
+        <a href="/schema_drift" target="_blank" style="font-size:0.65rem;color:#34d399;text-decoration:none;padding:4px 8px;background:rgba(52,211,153,0.08);border-radius:4px;border:1px solid rgba(52,211,153,0.2);">/schema_drift — Patronus bonus</a>
+        <a href="/leaderboard" target="_blank" style="font-size:0.65rem;color:var(--text2);text-decoration:none;padding:4px 8px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);">/leaderboard — Baselines</a>
+        <a href="/docs" target="_blank" style="font-size:0.65rem;color:var(--text2);text-decoration:none;padding:4px 8px;background:var(--bg3);border-radius:4px;border:1px solid var(--border);">/docs — Full API</a>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-title">MITRE ATT&CK Stages</div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:0.65rem;padding:5px 8px;border-radius:4px;background:rgba(255,255,255,0.03);border-left:2px solid #6b7280;color:var(--text2)">Stage 1 — Initial Compromise</div>
+        <div style="font-size:0.65rem;padding:5px 8px;border-radius:4px;background:rgba(245,158,11,0.06);border-left:2px solid #f59e0b;color:#fcd34d">Stage 2 — Credential Access</div>
+        <div style="font-size:0.65rem;padding:5px 8px;border-radius:4px;background:rgba(249,115,22,0.06);border-left:2px solid #f97316;color:#fdba74">Stage 3 — Lateral Movement</div>
+        <div style="font-size:0.65rem;padding:5px 8px;border-radius:4px;background:var(--red-glow);border-left:2px solid var(--red);color:#fca5a5">Stage 4 — EXFILTRATION</div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:0.5rem;border-top:1px solid var(--border);">
+      <div style="font-size:0.6rem;color:var(--text2);line-height:1.7;">
+        Meta × Scaler PyTorch OpenEnv Hackathon 2026<br>
+        <a href="https://github.com/FieroJain/cybersec-soc-env" target="_blank" style="color:var(--blue);text-decoration:none;">github.com/FieroJain/cybersec-soc-env</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const ENV_URL = 'https://Fieerawe-cybersec-soc-env.hf.space';
+let battleData = null;
+let currentStep = 0;
+let animTimer = null;
+let nodes = [];
+let edges = [];
+const SVG_W = 600, SVG_H = 340;
+
+const stageColors = { 1:'#6b7280', 2:'#f59e0b', 3:'#f97316', 4:'#ef4444' };
+
+function getNodeColor(n) {
+  if (n.is_isolated)        return '#1e3a8a';
+  if (n.visible_compromise) return '#7f1d1d';
+  if (n.alert_score > 0.6)  return '#78350f';
+  if (n.alert_score > 0.3)  return '#1c3a2a';
+  return '#1a2332';
+}
+
+function getNodeStroke(n) {
+  if (n.is_isolated)        return '#3b82f6';
+  if (n.visible_compromise) return '#ef4444';
+  if (n.alert_score > 0.6)  return '#f59e0b';
+  return 'rgba(255,255,255,0.12)';
+}
+
+function getNodeLabel(type) {
+  const map = {
+    'database_server':'DB','web_server':'WEB',
+    'auth_server':'AUTH','file_server':'FILE','workstation':'WS'
+  };
+  return map[type] || 'NODE';
+}
+
+function layoutNodes(count) {
+  const positions = [];
+  if (count <= 5) {
+    const cx = SVG_W/2, cy = SVG_H/2, r = 110;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * 2 * Math.PI - Math.PI/2;
+      positions.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+    }
+  } else if (count <= 10) {
+    const cx = SVG_W/2, cy = SVG_H/2;
+    const r1 = 60, r2 = 130;
+    const inner = Math.min(3, Math.floor(count/3));
+    for (let i = 0; i < inner; i++) {
+      const a = (i/inner)*2*Math.PI - Math.PI/2;
+      positions.push({ x: cx + r1*Math.cos(a), y: cy + r1*Math.sin(a) });
+    }
+    for (let i = 0; i < count - inner; i++) {
+      const a = (i/(count-inner))*2*Math.PI - Math.PI/2;
+      positions.push({ x: cx + r2*Math.cos(a), y: cy + r2*Math.sin(a) });
+    }
+  } else {
+    const cx = SVG_W/2, cy = SVG_H/2;
+    const rings = [4, 8, count-12];
+    const radii = [55, 115, 165];
+    let idx = 0;
+    rings.forEach((cnt, ri) => {
+      for (let i = 0; i < cnt && idx < count; i++, idx++) {
+        const a = (i/cnt)*2*Math.PI - Math.PI/2;
+        positions.push({ x: cx + radii[ri]*Math.cos(a), y: cy + radii[ri]*Math.sin(a) });
+      }
+    });
+  }
+  return positions;
+}
+
+function renderNetwork(nodeStatuses, step) {
+  const svg = document.getElementById('network-svg');
+  const positions = layoutNodes(nodeStatuses.length);
+
+  let html = `<defs>
+    <filter id="glow-red"><feGaussianBlur stdDeviation="3" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glow-blue"><feGaussianBlur stdDeviation="3" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // Draw simple edges between neighbors
+  for (let i = 0; i < nodeStatuses.length; i++) {
+    for (let j = i+1; j < nodeStatuses.length; j++) {
+      if (Math.random() < 0.35 || j === i+1) {
+        const p1 = positions[i], p2 = positions[j];
+        html += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}"
+          stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+      }
+    }
+  }
+
+  // Draw nodes
+  nodeStatuses.forEach((n, i) => {
+    const p = positions[i];
+    const fill   = getNodeColor(n);
+    const stroke = getNodeStroke(n);
+    const r = 22;
+    const filter = n.visible_compromise ? 'filter="url(#glow-red)"' :
+                   n.is_isolated ? 'filter="url(#glow-blue)"' : '';
+
+    html += `<g class="node-g" data-id="${n.id}" 
+      onmouseenter="showTooltip(event,${JSON.stringify(JSON.stringify(n))})"
+      onmouseleave="hideTooltip()"
+      style="cursor:pointer">`;
+    html += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}"
+      stroke="${stroke}" stroke-width="1.5" ${filter}/>`;
+
+    // Icon text
+    html += `<text x="${p.x}" y="${p.y-3}" text-anchor="middle"
+      font-family="JetBrains Mono,monospace" font-size="7" font-weight="600"
+      fill="${n.visible_compromise ? '#fca5a5' : n.is_isolated ? '#93c5fd' : '#8b949e'}">
+      ${getNodeLabel(n.type)}</text>`;
+    html += `<text x="${p.x}" y="${p.y+8}" text-anchor="middle"
+      font-family="JetBrains Mono,monospace" font-size="6"
+      fill="${n.alert_score > 0.6 ? '#fbbf24' : '#6b7280'}">
+      ${(n.alert_score*100).toFixed(0)}%</text>`;
+    html += `<text x="${p.x}" y="${p.y+32}" text-anchor="middle"
+      font-family="JetBrains Mono,monospace" font-size="7"
+      fill="rgba(255,255,255,0.3)">${n.id}</text>`;
+    html += `</g>`;
+  });
+
+  // Legend
+  const legends = [
+    { color:'#ef4444', label:'Compromised' },
+    { color:'#3b82f6', label:'Isolated' },
+    { color:'#f59e0b', label:'High Alert' },
+    { color:'#1a2332', label:'Clean' },
+  ];
+  legends.forEach((l, i) => {
+    html += `<rect x="${10 + i*115}" y="318" width="8" height="8" rx="2" fill="${l.color}"/>`;
+    html += `<text x="${22 + i*115}" y="326" font-family="JetBrains Mono,monospace"
+      font-size="7" fill="#6b7280">${l.label}</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+function showTooltip(e, nStr) {
+  const n = JSON.parse(nStr);
+  const tip = document.getElementById('tooltip');
+  tip.innerHTML = `
+    <div style="color:#e6edf3;font-weight:600;margin-bottom:4px">Node ${n.id} — ${n.type}</div>
+    <div style="color:#8b949e">Alert: ${(n.alert_score*100).toFixed(1)}%</div>
+    <div style="color:#8b949e">Asset value: ${n.asset_value}</div>
+    <div style="color:${n.visible_compromise?'#ef4444':'#22c55e'}">
+      ${n.visible_compromise ? 'COMPROMISED' : 'Clean'}</div>
+    <div style="color:${n.is_isolated?'#3b82f6':'#8b949e'}">
+      ${n.is_isolated ? 'ISOLATED' : 'Active'}</div>
+  `;
+  tip.style.display = 'block';
+  tip.style.left = (e.clientX + 12) + 'px';
+  tip.style.top  = (e.clientY - 10) + 'px';
+}
+
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+function addLog(type, step, text) {
+  const log = document.getElementById('log-scroll');
+  const div = document.createElement('div');
+  div.className = `log-entry ${type}-log`;
+  div.innerHTML = `<span class="log-step">[${type.toUpperCase()}:${step}]</span>${text}`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  // keep max 40 entries
+  while (log.children.length > 40) log.removeChild(log.firstChild);
+}
+
+function updateStats(step) {
+  if (!battleData || !battleData.trajectory) return;
+  const t = battleData.trajectory[step - 1];
+  if (!t) return;
+
+  document.getElementById('stat-stage').textContent   = t.network_state.attack_stage + '/4';
+  document.getElementById('stat-threats').textContent  = t.network_state.active_threats;
+  document.getElementById('stat-isolated').textContent = t.network_state.isolated_nodes;
+  document.getElementById('stat-impact').textContent   = t.network_state.business_impact.toFixed(2);
+
+  const pct = Math.round((step / battleData.total_steps) * 100);
+  const bar = document.getElementById('progress-bar');
+  bar.style.width = pct + '%';
+  const stage = t.network_state.attack_stage;
+  bar.style.background = stageColors[stage] || '#3b82f6';
+
+  document.getElementById('step-counter').textContent = `Step ${step}`;
+}
+
+async function startBattle() {
+  const btn = document.getElementById('btn-start');
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+  btn.className = 'btn btn-secondary';
+
+  document.getElementById('result-banner').style.display = 'none';
+  document.getElementById('log-scroll').innerHTML = '';
+  currentStep = 0;
+
+  const task = document.getElementById('task-select').value;
+
+  addLog('system', 0, 'Connecting to live environment...');
+
+  try {
+    const r = await fetch(ENV_URL + '/multiagent?task=' + task);
+    battleData = await r.json();
+
+    document.getElementById('topo-badge').textContent = battleData.topology || 'unknown';
+
+    // Initial render with first step data
+    if (battleData.trajectory && battleData.trajectory.length > 0) {
+      addLog('system', 0, `Battle started — ${battleData.topology} topology — ${battleData.total_steps} steps`);
+      animateBattle();
+    }
+  } catch(e) {
+    addLog('system', 0, 'Error connecting to environment: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '▶ Start Battle';
+    btn.className = 'btn btn-primary';
+  }
+}
+
+function animateBattle() {
+  if (!battleData || currentStep >= battleData.trajectory.length) {
+    showResult();
+    return;
+  }
+
+  currentStep++;
+  const t = battleData.trajectory[currentStep - 1];
+
+  // Update stats
+  updateStats(currentStep);
+
+  // Render network if we have node data
+  // (multiagent endpoint returns trajectory, not full node statuses per step)
+  // We'll show a simulated network based on active_threats and isolated_nodes
+  renderSimulatedNetwork(t, battleData.trajectory.length > 0 ?
+    (document.getElementById('task-select').value === 'easy' ? 5 :
+     document.getElementById('task-select').value === 'medium' ? 10 : 20) : 10);
+
+  // Log Red Team
+  if (t.red) {
+    addLog('red', currentStep,
+      `${t.red.stage_name} — ${t.red.action || 'Advancing'}`);
+  }
+
+  // Log Blue Team
+  if (t.blue) {
+    addLog('blue', currentStep,
+      `${t.blue.action} — ${t.blue.reasoning ? t.blue.reasoning.substring(0,80) : ''}`);
+  }
+
+  const totalSteps = battleData.total_steps || battleData.trajectory.length;
+  const delay = Math.max(400, 1200 - (totalSteps * 15));
+  animTimer = setTimeout(animateBattle, delay);
+}
+
+function renderSimulatedNetwork(step, nodeCount) {
+  const svg = document.getElementById('network-svg');
+  const positions = layoutNodes(nodeCount);
+  const active = step.network_state.active_threats;
+  const isolated = step.network_state.isolated_nodes;
+
+  let html = `<defs>
+    <filter id="gr"><feGaussianBlur stdDeviation="3" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // Edges
+  for (let i = 0; i < nodeCount; i++) {
+    const j = (i+1) % nodeCount;
+    html += `<line x1="${positions[i].x}" y1="${positions[i].y}"
+      x2="${positions[j].x}" y2="${positions[j].y}"
+      stroke="rgba(255,255,255,0.05)" stroke-width="1"/>`;
+    if (i < nodeCount - 2) {
+      html += `<line x1="${positions[i].x}" y1="${positions[i].y}"
+        x2="${positions[Math.floor(nodeCount/2)].x}" y2="${positions[Math.floor(nodeCount/2)].y}"
+        stroke="rgba(255,255,255,0.03)" stroke-width="1"/>`;
+    }
+  }
+
+  // Nodes
+  for (let i = 0; i < nodeCount; i++) {
+    const p = positions[i];
+    const isIsolated = i < isolated;
+    const isCompromised = !isIsolated && i < isolated + active;
+    const isHighAlert = !isIsolated && !isCompromised && i < isolated + active + 2;
+
+    const fill   = isIsolated ? '#1e3a8a' : isCompromised ? '#7f1d1d' : isHighAlert ? '#78350f' : '#1a2332';
+    const stroke = isIsolated ? '#3b82f6' : isCompromised ? '#ef4444' : isHighAlert ? '#f59e0b' : 'rgba(255,255,255,0.1)';
+    const filter = isCompromised ? 'filter="url(#gr)"' : '';
+
+    html += `<circle cx="${p.x}" cy="${p.y}" r="20" fill="${fill}"
+      stroke="${stroke}" stroke-width="1.5" ${filter}/>`;
+
+    const labels = ['WS','DB','WEB','AUTH','FILE'];
+    html += `<text x="${p.x}" y="${p.y+4}" text-anchor="middle"
+      font-family="JetBrains Mono,monospace" font-size="7" font-weight="600"
+      fill="${isCompromised?'#fca5a5':isIsolated?'#93c5fd':'#8b949e'}">
+      ${labels[i % labels.length]}</text>`;
+    html += `<text x="${p.x}" y="${p.y+30}" text-anchor="middle"
+      font-family="JetBrains Mono,monospace" font-size="7"
+      fill="rgba(255,255,255,0.25)">${i}</text>`;
+  }
+
+  // Stage indicator
+  const sc = stageColors[step.network_state.attack_stage] || '#6b7280';
+  const stageNames = {1:'Stage 1: Initial Compromise',2:'Stage 2: Credential Access',
+                      3:'Stage 3: Lateral Movement',4:'Stage 4: EXFILTRATION'};
+  html += `<rect x="8" y="8" width="220" height="20" rx="4" fill="rgba(0,0,0,0.5)"/>`;
+  html += `<circle cx="20" cy="18" r="4" fill="${sc}"/>`;
+  html += `<text x="30" y="22" font-family="JetBrains Mono,monospace" font-size="8"
+    fill="${sc}">${stageNames[step.network_state.attack_stage]||''}</text>`;
+
+  // Legend
+  const legends = [
+    { color:'#ef4444', label:'Compromised' },
+    { color:'#3b82f6', label:'Isolated' },
+    { color:'#f59e0b', label:'High Alert' },
+    { color:'#1a2332', label:'Clean' },
+  ];
+  legends.forEach((l, i) => {
+    html += `<rect x="${10+i*112}" y="318" width="8" height="8" rx="2" fill="${l.color}"/>`;
+    html += `<text x="${22+i*112}" y="326" font-family="JetBrains Mono,monospace"
+      font-size="7" fill="#6b7280">${l.label}</text>`;
+  });
+
+  svg.innerHTML = html;
+}
+
+function showResult() {
+  const banner = document.getElementById('result-banner');
+  banner.style.display = 'block';
+
+  if (battleData.defender_wins) {
+    banner.className = 'result-banner blue-win';
+    banner.textContent = '✓ BLUE TEAM WINS — All threats contained';
+  } else {
+    banner.className = 'result-banner red-win';
+    banner.textContent = '✗ RED TEAM WINS — Exfiltration succeeded';
+  }
+
+  const btn = document.getElementById('btn-start');
+  btn.disabled = false;
+  btn.textContent = '▶ New Battle';
+  btn.className = 'btn btn-primary';
+}
+
+function resetBattle() {
+  if (animTimer) clearTimeout(animTimer);
+  battleData = null;
+  currentStep = 0;
+  document.getElementById('log-scroll').innerHTML = '';
+  document.getElementById('result-banner').style.display = 'none';
+  document.getElementById('stat-stage').textContent = '—';
+  document.getElementById('stat-threats').textContent = '—';
+  document.getElementById('stat-isolated').textContent = '—';
+  document.getElementById('stat-impact').textContent = '—';
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('step-counter').textContent = 'Step 0';
+  document.getElementById('topo-badge').textContent = '—';
+  document.getElementById('network-svg').innerHTML = '';
+  const btn = document.getElementById('btn-start');
+  btn.disabled = false;
+  btn.textContent = '▶ Start Battle';
+  btn.className = 'btn btn-primary';
+}
+
+// Initial empty network
+renderSimulatedNetwork(
+  {network_state:{attack_stage:1,active_threats:0,isolated_nodes:0,business_impact:0}},
+  10
+);
+</script>
+</body>
+</html>

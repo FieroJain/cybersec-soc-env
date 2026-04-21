@@ -767,6 +767,18 @@ def long_horizon_demo() -> Dict[str, Any]:
     }
 
 
+# ===========================================================================
+# /battle endpoint – Live Red vs Blue battle visualization dashboard
+# ===========================================================================
+
+@app.get("/battle", response_class=HTMLResponse)
+def battle_dashboard():
+    """Live Red vs Blue battle visualization dashboard."""
+    import pathlib
+    html_path = pathlib.Path(__file__).parent / "battle_dashboard.html"
+    return html_path.read_text()
+
+
 # ---------------------------------------------------------------------------
 # Gradio Dashboard (mounted at /web) – DO NOT MOVE
 # ---------------------------------------------------------------------------
