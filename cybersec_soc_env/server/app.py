@@ -1049,7 +1049,12 @@ def robustness_report() -> Dict[str, Any]:
         "live_demo":         "GET /adversarial — real-time adversarial test",
         "training_demo":     "Colab notebook — topology curriculum training",
     }
-
+@app.get("/training", response_class=HTMLResponse)
+def training_dashboard():
+    """Live training visualization dashboard."""
+    import pathlib
+    html_path = pathlib.Path(__file__).parent / "training_dashboard.html"
+    return html_path.read_text()
 # ===========================================================================
 # /battle endpoint – Live Red vs Blue battle visualization dashboard
 # ===========================================================================

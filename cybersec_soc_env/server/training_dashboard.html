@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CyberSec-SOC — Live Training Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#080c10;--bg2:#0d1117;--bg3:#161b22;
+    --border:rgba(255,255,255,0.08);
+    --text:#e6edf3;--text2:#8b949e;
+    --green:#22c55e;--red:#ef4444;--blue:#3b82f6;
+    --amber:#f59e0b;--purple:#a78bfa;
+    --mono:'JetBrains Mono',monospace;
+    --sans:'Syne',sans-serif;
+  }
+  body{background:var(--bg);color:var(--text);font-family:var(--mono);min-height:100vh;padding:1.5rem;}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.03) 2px,rgba(0,0,0,0.03) 4px);pointer-events:none;z-index:1000;}
+
+  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);}
+  .title{font-family:var(--sans);font-size:1.1rem;font-weight:800;}
+  .title .accent{color:var(--green);}
+  .live-badge{display:flex;align-items:center;gap:6px;font-size:0.65rem;color:var(--text2);}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1rem;}
+
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem;}
+  .card-title{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text2);margin-bottom:0.75rem;}
+
+  .metric{font-family:var(--sans);font-size:2rem;font-weight:800;line-height:1;}
+  .metric.green{color:var(--green);}
+  .metric.amber{color:var(--amber);}
+  .metric.blue{color:var(--blue);}
+  .metric.red{color:var(--red);}
+  .metric-sub{font-size:0.65rem;color:var(--text2);margin-top:4px;}
+
+  canvas{width:100%;background:transparent;}
+
+  .phase-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:0.5rem;}
+  .phase-tag{font-size:0.58rem;padding:3px 8px;border-radius:100px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;}
+  .phase-tag.done{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3);}
+  .phase-tag.active{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.3);animation:pulse 1.5s infinite;}
+  .phase-tag.pending{background:rgba(255,255,255,0.04);color:var(--text2);border:1px solid var(--border);}
+
+  .log-box{height:140px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+  .log-line{font-size:0.62rem;line-height:1.5;padding:3px 6px;border-radius:3px;border-left:2px solid transparent;animation:slideIn 0.3s ease;}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+  .log-line.reward{background:rgba(34,197,94,0.08);border-color:var(--green);color:#86efac;}
+  .log-line.stage{background:rgba(245,158,11,0.08);border-color:var(--amber);color:#fcd34d;}
+  .log-line.info{background:rgba(255,255,255,0.03);border-color:var(--text2);color:var(--text2);}
+  .log-line.win{background:rgba(59,130,246,0.1);border-color:var(--blue);color:#93c5fd;}
+
+  .topo-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .topo-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:0.6rem;}
+  .topo-name{font-size:0.58rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text2);margin-bottom:4px;}
+  .topo-bar-bg{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;margin-bottom:4px;overflow:hidden;}
+  .topo-bar-fill{height:100%;border-radius:2px;transition:width 1s ease;}
+  .topo-pct{font-family:var(--sans);font-size:0.95rem;font-weight:700;}
+
+  .controls{display:flex;gap:8px;margin-bottom:1rem;}
+  .btn{font-family:var(--mono);font-size:0.7rem;font-weight:600;padding:0.5rem 1.2rem;border-radius:5px;border:1px solid;cursor:pointer;letter-spacing:0.05em;text-transform:uppercase;transition:all 0.15s;}
+  .btn:hover{transform:translateY(-1px);}
+  .btn.start{background:var(--green);border-color:var(--green);color:#000;}
+  .btn.start:hover{background:#16a34a;}
+  .btn.reset-btn{background:transparent;border-color:var(--border);color:var(--text2);}
+  .btn.reset-btn:hover{border-color:var(--text2);color:var(--text);}
+
+  .progress-wrap{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-bottom:1rem;}
+  .progress-fill{height:100%;border-radius:2px;background:var(--green);transition:width 0.5s ease;}
+
+  .finding-box{background:var(--bg3);border:1px solid var(--amber);border-radius:6px;padding:0.75rem;font-size:0.65rem;line-height:1.7;color:var(--text2);margin-top:0.75rem;}
+  .finding-box strong{color:var(--amber);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="title">CyberSec-SOC — <span class="accent">Live Training</span> Dashboard</div>
+  <div class="live-badge"><span class="dot"></span>Meta × Scaler PyTorch OpenEnv Hackathon 2026</div>
+</div>
+
+<div class="controls">
+  <button class="btn start" onclick="startTraining()">▶ Simulate Training</button>
+  <button class="btn reset-btn" onclick="resetAll()">↺ Reset</button>
+  <span style="font-size:0.65rem;color:var(--text2);padding:0.5rem 0;align-self:center;">
+    On April 25 — replace with live GRPO training from Colab
+  </span>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-fill" id="progress" style="width:0%"></div>
+</div>
+
+<div class="grid3">
+  <div class="card">
+    <div class="card-title">Episodes Trained</div>
+    <div class="metric green" id="episodes">0</div>
+    <div class="metric-sub">of 50 target episodes</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Current Reward</div>
+    <div class="metric amber" id="current-reward">0.000</div>
+    <div class="metric-sub">episode reward signal</div>
+  </div>
+  <div class="card">
+    <div class="card-title">Mean Reward (last 10)</div>
+    <div class="metric blue" id="mean-reward">0.000</div>
+    <div class="metric-sub">rolling average</div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- Reward curve -->
+  <div class="card">
+    <div class="card-title">Reward Curve — Topology Curriculum Training</div>
+    <canvas id="reward-canvas" height="180"></canvas>
+  </div>
+
+  <!-- Curriculum stages -->
+  <div class="card">
+    <div class="card-title">Curriculum Stage</div>
+    <div id="stage-display" style="font-family:var(--sans);font-size:1rem;font-weight:700;color:var(--amber);margin-bottom:0.75rem;">
+      Waiting to start...
+    </div>
+    <div class="phase-row">
+      <span class="phase-tag pending" id="tag-mesh">Stage 1: Mesh</span>
+      <span class="phase-tag pending" id="tag-star">Stage 2: Star</span>
+      <span class="phase-tag pending" id="tag-hier">Stage 3: Hierarchical</span>
+      <span class="phase-tag pending" id="tag-seg">Stage 4: Segmented</span>
+    </div>
+    <div class="finding-box" style="margin-top:0.75rem;">
+      <strong>Why this curriculum works:</strong><br>
+      RL requires non-zero success probability early in training.
+      Mesh topology gives 86% win rate — agent gets positive reward immediately.
+      Segmented gives 0% — introduced last, after skill is built.
+      <br><br>
+      <strong>3.33× performance gap</strong> between best and worst topology.
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- Training log -->
+  <div class="card">
+    <div class="card-title">Training Log</div>
+    <div class="log-box" id="log-box"></div>
+  </div>
+
+  <!-- Topology win rates -->
+  <div class="card">
+    <div class="card-title">Topology Win Rates — Empirical Finding (n=90)</div>
+    <div class="topo-grid">
+      <div class="topo-card">
+        <div class="topo-name">Mesh</div>
+        <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:86%;background:#22c55e;"></div></div>
+        <div class="topo-pct" style="color:#22c55e;">86%</div>
+      </div>
+      <div class="topo-card">
+        <div class="topo-name">Star</div>
+        <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:73%;background:#3b82f6;"></div></div>
+        <div class="topo-pct" style="color:#3b82f6;">73%</div>
+      </div>
+      <div class="topo-card">
+        <div class="topo-name">Hierarchical</div>
+        <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:44%;background:#f59e0b;"></div></div>
+        <div class="topo-pct" style="color:#f59e0b;">44%</div>
+      </div>
+      <div class="topo-card">
+        <div class="topo-name">Segmented</div>
+        <div class="topo-bar-bg"><div class="topo-bar-fill" style="width:0%;background:#ef4444;"></div></div>
+        <div class="topo-pct" style="color:#ef4444;">0%</div>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;font-size:0.62rem;color:var(--text2);line-height:1.7;">
+      Same agent. Same task. <strong style="color:var(--amber);">3.33× gap.</strong><br>
+      Topology is an adversarial attack surface.<br>
+      Curriculum training is the defense.<br>
+      Live data → <a href="/research" style="color:var(--blue);text-decoration:none;">/research</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const CURRICULUM = [
+  {name:"Mesh",       tag:"tag-mesh", episodes:12, baseReward:0.45, label:"Stage 1: Mesh (86% win rate)"},
+  {name:"Star",       tag:"tag-star", episodes:12, baseReward:0.55, label:"Stage 2: Star (73% win rate)"},
+  {name:"Hierarchical",tag:"tag-hier",episodes:13, baseReward:0.60, label:"Stage 3: Hierarchical (44% win rate)"},
+  {name:"Segmented",  tag:"tag-seg",  episodes:13, baseReward:0.65, label:"Stage 4: Segmented (0% win rate — adversarial)"},
+];
+
+let rewards = [];
+let timer = null;
+let ep = 0;
+let totalEps = 50;
+
+function addLog(msg, type){
+  const box = document.getElementById('log-box');
+  const d = document.createElement('div');
+  d.className = `log-line ${type}`;
+  d.textContent = msg;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+  while(box.children.length > 60) box.removeChild(box.firstChild);
+}
+
+function drawCurve(){
+  const canvas = document.getElementById('reward-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 400;
+  const H = 180;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.clearRect(0,0,W,H);
+
+  if(rewards.length < 2) return;
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=4;i++){
+    const y = H - (i/4)*H*0.8 - H*0.1;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillText((i*0.25).toFixed(2), 2, y-2);
+  }
+
+  // Curriculum stage backgrounds
+  let stageStart = 0;
+  const stageColors = ['rgba(34,197,94,0.04)','rgba(59,130,246,0.04)',
+                        'rgba(245,158,11,0.04)','rgba(239,68,68,0.04)'];
+  CURRICULUM.forEach((s,i)=>{
+    const x1 = (stageStart/totalEps)*W;
+    const x2 = ((stageStart+s.episodes)/totalEps)*W;
+    ctx.fillStyle = stageColors[i];
+    ctx.fillRect(x1,0,x2-x1,H);
+    stageStart += s.episodes;
+  });
+
+  // Smooth rolling average
+  const windowSize = 5;
+  const smoothed = rewards.map((_,i)=>{
+    const start = Math.max(0,i-windowSize+1);
+    const slice = rewards.slice(start,i+1);
+    return slice.reduce((a,b)=>a+b,0)/slice.length;
+  });
+
+  // Raw rewards (dots)
+  ctx.fillStyle = 'rgba(34,197,94,0.3)';
+  rewards.forEach((r,i)=>{
+    const x = (i/(totalEps-1))*W;
+    const y = H - r*H*0.8 - H*0.1;
+    ctx.beginPath();
+    ctx.arc(x,y,2,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  // Smooth line
+  ctx.strokeStyle = '#22c55e';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  smoothed.forEach((r,i)=>{
+    const x = (i/(totalEps-1||1))*W;
+    const y = H - r*H*0.8 - H*0.1;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  // Label
+  if(rewards.length > 0){
+    const lastR = smoothed[smoothed.length-1];
+    const lx = ((rewards.length-1)/(totalEps-1||1))*W;
+    const ly = H - lastR*H*0.8 - H*0.1;
+    ctx.fillStyle = '#22c55e';
+    ctx.font = 'bold 10px JetBrains Mono';
+    ctx.fillText(lastR.toFixed(3), Math.min(lx+4, W-40), ly-5);
+  }
+}
+
+function getCurrentStage(epNum){
+  let cumulative = 0;
+  for(let s of CURRICULUM){
+    cumulative += s.episodes;
+    if(epNum < cumulative) return s;
+  }
+  return CURRICULUM[CURRICULUM.length-1];
+}
+
+function updateStageTags(stageName){
+  let found = false;
+  CURRICULUM.forEach(s=>{
+    const tag = document.getElementById(s.tag);
+    if(s.name === stageName){
+      tag.className = 'phase-tag active';
+      found = true;
+    } else if(!found){
+      tag.className = 'phase-tag done';
+    } else {
+      tag.className = 'phase-tag pending';
+    }
+  });
+}
+
+function generateReward(stage, epInStage){
+  // Realistic reward curve: starts low, improves with training
+  const progress = epInStage / stage.episodes;
+  const base = stage.baseReward;
+  const improvement = 0.25 * progress;
+  const noise = (Math.random() - 0.5) * 0.15;
+  return Math.min(0.999, Math.max(0.001, base + improvement + noise));
+}
+
+function startTraining(){
+  if(timer) return;
+  addLog('Initializing GRPO trainer...', 'info');
+  addLog('Loading Llama-3.1-8B-Instruct...', 'info');
+  addLog('Connecting to environment: cybersec-soc-env', 'info');
+  addLog('Starting topology curriculum training...', 'stage');
+
+  let stageEpStart = 0;
+  let prevStage = null;
+
+  timer = setInterval(()=>{
+    if(ep >= totalEps){
+      clearInterval(timer);
+      timer = null;
+      addLog('Training complete!', 'win');
+      addLog(`Final mean reward: ${(rewards.slice(-10).reduce((a,b)=>a+b,0)/10).toFixed(3)}`, 'win');
+      document.getElementById('stage-display').textContent = 'Training Complete';
+      document.getElementById('stage-display').style.color = '#22c55e';
+      CURRICULUM.forEach(s=>{
+        document.getElementById(s.tag).className = 'phase-tag done';
+      });
+      return;
+    }
+
+    const stage = getCurrentStage(ep);
+
+    // Stage transition log
+    if(prevStage !== stage.name){
+      if(prevStage !== null){
+        stageEpStart = ep;
+        addLog(`Stage complete: ${prevStage}`, 'win');
+      }
+      addLog(`→ ${stage.label}`, 'stage');
+      prevStage = stage.name;
+    }
+
+    updateStageTags(stage.name);
+    document.getElementById('stage-display').textContent = stage.label;
+
+    const epInStage = ep - stageEpStart;
+    const r = generateReward(stage, epInStage);
+    rewards.push(r);
+    ep++;
+
+    // Update metrics
+    document.getElementById('episodes').textContent = ep;
+    document.getElementById('current-reward').textContent = r.toFixed(3);
+    const last10 = rewards.slice(-10);
+    const mean = last10.reduce((a,b)=>a+b,0)/last10.length;
+    document.getElementById('mean-reward').textContent = mean.toFixed(3);
+    document.getElementById('progress').style.width = (ep/totalEps*100)+'%';
+
+    // Log every 5 episodes
+    if(ep % 5 === 0){
+      addLog(
+        `ep=${ep} topology=${stage.name} reward=${r.toFixed(3)} mean=${mean.toFixed(3)}`,
+        r > mean ? 'reward' : 'info'
+      );
+    }
+
+    drawCurve();
+  }, 400);
+}
+
+function resetAll(){
+  if(timer){ clearInterval(timer); timer = null; }
+  rewards = []; ep = 0;
+  document.getElementById('episodes').textContent = '0';
+  document.getElementById('current-reward').textContent = '0.000';
+  document.getElementById('mean-reward').textContent = '0.000';
+  document.getElementById('progress').style.width = '0%';
+  document.getElementById('stage-display').textContent = 'Waiting to start...';
+  document.getElementById('stage-display').style.color = 'var(--amber)';
+  document.getElementById('log-box').innerHTML = '';
+  CURRICULUM.forEach(s=>{ document.getElementById(s.tag).className='phase-tag pending'; });
+  const canvas = document.getElementById('reward-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// Init canvas size
+window.addEventListener('load', ()=>{
+  const canvas = document.getElementById('reward-canvas');
+  canvas.width = canvas.offsetWidth;
+});
+</script>
+</body>
+</html>
