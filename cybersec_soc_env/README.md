@@ -296,3 +296,10 @@ Built for the **Meta Ã— Scaler PyTorch OpenEnv Hackathon 2026**.
 ---
 
 *If this work contributed to your research, please consider starring the repository on [GitHub](https://github.com/FieroJain/cybersec-soc-env).*
+
+
+![Training Loss Curve](loss_curve.png)
+*Loss dropped from 4.41 to 0.097 — 97% reduction.*
+
+![Topology Win Rates](topology_finding.png)
+*3.33x performance gap — n=90 episodes.*
