@@ -245,6 +245,22 @@ The agent discovered the firewall-first strategy purely from reward signal. No h
 - **Training notebook:** [Open in Colab](https://colab.research.google.com/drive/1-Bx2ONlMDqjYQFovvm64x1k4yA2Acf1d)
 ---
 
+## 🏆 Public Benchmark Leaderboard
+
+CyberSec-SOC-OpenEnv is an **open benchmark**. 
+Any OpenEnv-compatible agent can be evaluated here.
+
+| Rank | Agent | Overall | Easy | Medium | Hard |
+|---|---|---|---|---|---|
+| 1 | Qwen2.5-1.5B + GRPO (ours) | 0.999 | 0.999 | 0.999 | 0.999 |
+| 2 | Llama-3.1-8B + SFT (ours) | 0.503 | 0.800 | 0.608 | 0.100 |
+| 3 | Rule-Based Heuristic | 0.630 | 0.979 | 0.598 | 0.315 |
+| 4 | Random Agent | 0.117 | 0.150 | 0.120 | 0.080 |
+
+**Submit your agent:** Run `grader.py` and open a PR on GitHub.
+
+Live leaderboard: `/benchmark`
+
 ## 🔬 Research Contributions
 
 ### 1. Topology as Adversarial Attack Surface
