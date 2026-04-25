@@ -1,0 +1,38 @@
+[
+  {
+    "topology": "mesh",
+    "attacker_profile": "unknown",
+    "pivot_nodes_used": [],
+    "episode_outcome": "win"
+  },
+  {
+    "topology": "segmented",
+    "attacker_profile": "unknown",
+    "pivot_nodes_used": [],
+    "episode_outcome": "loss"
+  },
+  {
+    "topology": "star",
+    "attacker_profile": "unknown",
+    "pivot_nodes_used": [],
+    "episode_outcome": "win"
+  },
+  {
+    "topology": "star",
+    "attacker_profile": "unknown",
+    "pivot_nodes_used": [],
+    "episode_outcome": "win"
+  },
+  {
+    "topology": "mesh",
+    "attacker_profile": "unknown",
+    "pivot_nodes_used": [],
+    "episode_outcome": "win"
+  },
+  {
+    "topology": "mesh",
+    "attacker_profile": "unknown",
+    "pivot_nodes_used": [],
+    "episode_outcome": "win"
+  }
+]
