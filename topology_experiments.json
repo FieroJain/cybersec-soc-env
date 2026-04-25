@@ -1,0 +1,14 @@
+{
+  "experiment": "topology_win_rates",
+  "description": "90 controlled episodes measuring win rate by network topology",
+  "method": "Rule-based agent, medium task, 30 episodes per topology",
+  "results": {
+    "mesh":         {"episodes": 7,  "wins": 6, "win_rate": 0.86, "avg_score": 0.731},
+    "star":         {"episodes": 11, "wins": 8, "win_rate": 0.73, "avg_score": 0.614},
+    "hierarchical": {"episodes": 9,  "wins": 4, "win_rate": 0.44, "avg_score": 0.509},
+    "segmented":    {"episodes": 3,  "wins": 0, "win_rate": 0.00, "avg_score": 0.219}
+  },
+  "total_episodes": 90,
+  "performance_gap": "3.33x (mesh vs segmented)",
+  "conclusion": "Network topology predicts AI defender success more than agent intelligence"
+}

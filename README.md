@@ -477,7 +477,7 @@ Built for **Meta Ã— Scaler PyTorch OpenEnv Hackathon 2026** â€” Top finalist fro
 ## Training Results
 
 ![Training Loss Curve](loss_curve.png)
-*Loss dropped from 4.41 to 0.097 — 97% reduction.*
+*Loss dropped from 4.41 to 0.097 ï¿½ 97% reduction.*
 
 ![Topology Win Rates](topology_finding.png)
-*3.33x performance gap — n=90 episodes.*
+*3.33x performance gap ï¿½ n=90 episodes.*
