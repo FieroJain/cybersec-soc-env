@@ -295,6 +295,23 @@ Emergent finding from coalition dynamics:
 
 Training agents to reach consensus is as important as training individual capability.
 
+### 4. 2026 Threat Intelligence — Real Attack Patterns as Training Signal
+
+Red Team models four real 2026 attack profiles from WEF Global Cybersecurity Outlook 2026:
+
+| Threat Profile | Real World Basis | Attack Speed |
+|---|---|---|
+| AI-Powered Lateral Movement | Autonomous tools accelerate attacks 10x | Fast |
+| Ransomware 3.0 | Targets business continuity not just encryption | Medium |
+| Supply Chain Infiltration | Trusted vendor as silent entry point | Slow |
+| Identity Theft / MFA Fatigue | Credential harvesting bypasses perimeter | Fast |
+
+**Key finding:** AI-powered lateral movement reaches Stage 4 fastest — 0% defender win rate.
+This matches 2026 threat reports. Training against diverse real-world profiles produces
+defenders that generalize beyond fixed attack patterns.
+
+Reproducible at [`/threat_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/threat_intelligence)
+
 ### 3. First Adversarial Multi-Agent SOC Environment in OpenEnv
 
 Both attacker and defender use LLM chain-of-thought reasoning. Red Team follows MITRE ATT&CK and adapts to defender actions. Blue Team maintains action history and reasons under partial observability. Neither agent is scripted — both think.
