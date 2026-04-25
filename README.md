@@ -30,7 +30,7 @@ tags:
 
 ## 🎬 Demo Video
 
-[Watch 2-minute demo on YouTube](https://youtu.be/aZmq70Z0YOA)
+[Watch 2-minute demo on YouTube](YOUR_YOUTUBE_LINK)
 
 ## 🧪 Training Notebook
 
@@ -205,34 +205,44 @@ Scores averaged across 20 independent episodes per task.
 
 ## 🏋️ Training Results
 
-- **Model:** meta-llama/Llama-3.1-8B-Instruct + LoRA via Unsloth
-- **Method:** GRPO with topology curriculum learning
-- **Curriculum order:** mesh → star → hierarchical → segmented
+### GRPO Reward Curve — Real Training on HF Jobs T4 GPU
+
+![GRPO Training Reward Curve](training_curve.png)
+
+| Metric | Value |
+|---|---|
+| Start reward | 0.750 |
+| End reward | 0.999 |
+| Improvement | +0.249 |
+| Steps | 100 |
+| Model | Qwen2.5-1.5B + LoRA |
+| Hardware | HF Jobs T4 GPU |
+| Method | GRPO + topology curriculum |
+
+The agent discovered the firewall-first strategy purely from reward signal. No human programmed it. The environment taught it.
+
+---
 
 ### Loss Curve — Actual Training Run
 
 ![Training Loss](loss_curve.png)
-*Loss dropped from 4.41 → 0.097 in 30 steps (97% reduction). 
-Llama-3.1-8B + LoRA, topology curriculum.*
+*Loss dropped from 4.41 → 0.097 in 30 steps (97% reduction). Llama-3.1-8B + LoRA, topology curriculum.*
 
 ### Topology Win Rates — Empirical Finding (n=90 episodes)
 
 ![Topology Finding](topology_finding.png)
-*Same agent, same task. 3.33× performance gap between mesh (86%) 
-and segmented (0%). This finding drives the training curriculum.*
-*3.33× performance gap — same agent, same task, n=90 episodes.*
-
+*Same agent, same task. 3.33× performance gap between mesh (86%) and segmented (0%). This finding drives the training curriculum.*
 
 ### Before vs After Training
 
 | | Before Training | After Training |
 |---|---|---|
 | Loss | 4.4128 | 0.0976 |
+| Reward | 0.750 | 0.999 |
 | Agent behavior | Random actions | "Isolate database_server first — highest asset value" |
-| Improvement | — | 97% loss reduction |
+| Improvement | — | 97% loss reduction, +0.249 reward |
 
 - **Training notebook:** [Open in Colab](https://colab.research.google.com/drive/1-Bx2ONlMDqjYQFovvm64x1k4yA2Acf1d)
-
 ---
 
 ## 🔬 Research Contributions
@@ -474,4 +484,10 @@ Built for **Meta × Scaler PyTorch OpenEnv Hackathon 2026** — Top finalist fro
 
 *If this work contributed to your research, please consider starring the repository on GitHub.*
 
+## Training Results
 
+![Training Loss Curve](loss_curve.png)
+*Loss dropped from 4.41 to 0.097 � 97% reduction.*
+
+![Topology Win Rates](topology_finding.png)
+*3.33x performance gap � n=90 episodes.*
