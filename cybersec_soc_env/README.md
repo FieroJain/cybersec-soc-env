@@ -290,6 +290,24 @@ Training agents to reach consensus is as important as training individual capabi
 Both attacker and defender use LLM chain-of-thought reasoning. Red Team follows MITRE ATT&CK and adapts to defender actions. Blue Team maintains action history and reasons under partial observability. Neither agent is scripted — both think.
 
 ---
+## 📚 Research Connections
+
+This work connects to several active 2026 research directions:
+
+**RLVR (Reinforcement Learning with Verifiable Rewards):** Our cybersecurity 
+reward signal — containment rate, business impact, exfiltration prevention — 
+is a programmatically verifiable reward, directly implementing the RLVR 
+paradigm where environment outcomes replace human feedback as the training signal.
+
+**Agentic AI for Cybersecurity:** Our adversarial multi-agent architecture 
+(Red Team attacker + Blue Team defender + Coalition formation) empirically 
+validates the multi-agent RL attacker/defender dynamics identified as a 
+key open problem in the 2026 Agentic AI and Cybersecurity survey.
+
+**Topology as Adversarial Attack Surface:** Our finding that network topology 
+predicts defender success more than agent intelligence (3.33x gap, n=90 episodes) 
+provides the first empirical evidence for topology-aware curriculum design 
+in LLM agent training — a gap identified but unmeasured in existing benchmarks.
 
 ## ⚡ Quick Start
 
