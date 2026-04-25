@@ -1,17 +1,3 @@
-# /// script
-# dependencies = [
-#   "unsloth",
-#   "trl",
-#   "datasets",
-#   "matplotlib",
-#   "numpy",
-#   "requests",
-#   "peft",
-#   "accelerate",
-#   "bitsandbytes",
-# ]
-# ///
-
 from unsloth import FastLanguageModel
 from trl import GRPOConfig, GRPOTrainer
 from datasets import Dataset
@@ -22,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ENV_URL = "https://Fieerawe-cybersec-soc-env.hf.space"
-HF_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("UV_SCRIPT_HF_TOKEN")
+HF_TOKEN = os.environ.get("HF_TOKEN")
 HF_USERNAME = "Fieerawe"
 MODEL_REPO = f"{HF_USERNAME}/cybersec-soc-defender"
 

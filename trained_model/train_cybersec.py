@@ -15,16 +15,11 @@
 from unsloth import FastLanguageModel
 from trl import GRPOConfig, GRPOTrainer
 from datasets import Dataset
-from huggingface_hub import HfApi
 import requests
-import os
 import matplotlib.pyplot as plt
 import numpy as np
 
 ENV_URL = "https://Fieerawe-cybersec-soc-env.hf.space"
-HF_TOKEN = os.environ.get("HF_TOKEN") or os.environ.get("UV_SCRIPT_HF_TOKEN")
-HF_USERNAME = "Fieerawe"
-MODEL_REPO = f"{HF_USERNAME}/cybersec-soc-defender"
 
 print("Loading model...")
 model, tokenizer = FastLanguageModel.from_pretrained(
@@ -49,23 +44,30 @@ def get_obs():
         obs = r.json()["observation"]
         nodes = obs["node_statuses"][:5]
         node_text = "\n".join([
-            f"Node {n['id']} ({n['type']}): alert={n['alert_score']:.2f}"
+            f"Node {n['id']} ({n['type']}): alert={n['alert_score']:.2f} compromised={n['visible_compromise']}"
             for n in nodes
         ])
-        return f"""You are a SOC analyst defending a network.
+        return f"""You are a SOC analyst. Network under attack.
 Attack Stage: {obs['attack_stage']}/4
 Topology: {obs['topology_type']}
+
 NODES:
 {node_text}
-Choose: ACTION: scan/isolate/firewall/patch/nothing <node_id>"""
+
+Choose action:
+ACTION: scan <node_id>
+ACTION: isolate <node_id>
+ACTION: firewall -1
+ACTION: patch <node_id>
+ACTION: nothing -1"""
     except:
-        return "ACTION: firewall -1"
+        return "ACTION: scan 0"
 
 def cybersec_reward(completions, prompts=None, **kwargs):
     rewards = []
     for completion in completions:
         try:
-            text = str(completion)
+            text = completion if isinstance(completion, str) else str(completion)
             action_type = "scan"
             node_id = 0
             if "ACTION:" in text:
@@ -77,10 +79,7 @@ def cybersec_reward(completions, prompts=None, **kwargs):
                 action_type = "scan"
             r = requests.post(
                 ENV_URL + "/step",
-                json={"action": {
-                    "action_type": action_type,
-                    "target_node_id": node_id
-                }},
+                json={"action": {"action_type": action_type, "target_node_id": node_id}},
                 timeout=5
             )
             reward = float(r.json().get("reward", 0.0))
@@ -94,7 +93,7 @@ prompts = [{"prompt": get_obs()} for _ in range(40)]
 dataset = Dataset.from_list(prompts)
 
 config = GRPOConfig(
-    output_dir="./cybersec-grpo-v2",
+    output_dir="./cybersec-grpo",
     per_device_train_batch_size=1,
     gradient_accumulation_steps=4,
     num_generations=4,
@@ -115,52 +114,42 @@ trainer = GRPOTrainer(
     tokenizer=tokenizer,
 )
 
-print("Training...")
+print("Starting GRPO training...")
 trainer.train()
 
-# Save reward curve
 log_history = trainer.state.log_history
 steps = [x["step"] for x in log_history if "reward" in x]
-rewards_list = [x["reward"] for x in log_history if "reward" in x]
+rewards = [x["reward"] for x in log_history if "reward" in x]
 
 if steps:
     fig, ax = plt.subplots(figsize=(12, 5))
-    ax.plot(steps, rewards_list, color="#ef4444", linewidth=2.5, label="Training Reward")
-    ax.fill_between(steps, rewards_list, alpha=0.15, color="#ef4444")
-    z = np.polyfit(steps, rewards_list, 1)
+    ax.plot(steps, rewards, color="#ef4444", linewidth=2.5, label="Training Reward")
+    ax.fill_between(steps, rewards, alpha=0.15, color="#ef4444")
+    z = np.polyfit(steps, rewards, 1)
     p = np.poly1d(z)
     ax.plot(steps, p(steps), "--", color="#22c55e", linewidth=2,
             label=f"Trend: +{z[0]:.4f}/step")
     ax.set_xlabel("Training Step", fontsize=13)
     ax.set_ylabel("Average Reward", fontsize=13)
-    ax.set_title("CyberSec-SOC-OpenEnv: GRPO Training Curve", fontsize=15, fontweight="bold")
+    ax.set_title("CyberSec-SOC-OpenEnv: GRPO Training Reward Curve\nQwen2.5-1.5B + LoRA | Topology Curriculum",
+                 fontsize=14, fontweight="bold")
     ax.legend(fontsize=12)
     ax.grid(True, alpha=0.3)
-    if len(rewards_list) > 1:
-        improvement = rewards_list[-1] - rewards_list[0]
+    ax.set_ylim(0, 1.0)
+    if len(rewards) > 1:
+        improvement = rewards[-1] - rewards[0]
         ax.annotate(
             f"Improvement: {improvement:+.3f}",
-            xy=(steps[-1], rewards_list[-1]),
-            xytext=(steps[len(steps)//3], max(rewards_list)*0.85),
+            xy=(steps[-1], rewards[-1]),
+            xytext=(steps[30], max(rewards)*0.85),
             arrowprops=dict(arrowstyle="->", color="green", lw=2),
             color="green", fontsize=13, fontweight="bold"
         )
     plt.tight_layout()
-    plt.savefig("training_curve_v2.png", dpi=150, bbox_inches="tight")
-    print(f"Start: {rewards_list[0]:.3f} End: {rewards_list[-1]:.3f}")
-    print(f"Improvement: {rewards_list[-1]-rewards_list[0]:+.3f}")
-
-# Push model to HF Hub
-print("Pushing trained model to HF Hub...")
-model.push_to_hub(
-    MODEL_REPO,
-    token=HF_TOKEN,
-    commit_message="CyberSec SOC GRPO trained defender"
-)
-tokenizer.push_to_hub(
-    MODEL_REPO,
-    token=HF_TOKEN,
-    commit_message="tokenizer"
-)
-print(f"Model saved at: https://huggingface.co/{MODEL_REPO}")
-print("DONE!")
+    plt.savefig("training_curve.png", dpi=150, bbox_inches="tight")
+    print(f"\nStart reward: {rewards[0]:.3f}")
+    print(f"End reward:   {rewards[-1]:.3f}")
+    print(f"Improvement:  {rewards[-1]-rewards[0]:+.3f}")
+    print("training_curve.png saved!")
+else:
+    print("Training done but no reward logs found.")

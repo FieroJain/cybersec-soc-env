@@ -27,7 +27,7 @@ from cybersec_soc_env import SOCEnv, SOCAction
 # ---------------------------------------------------------------------------
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME   = os.getenv("MODEL_NAME",   "meta-llama/Llama-3.1-8B-Instruct")
+MODEL_NAME = os.getenv("MODEL_NAME", "Fieerawe/cybersec-soc-defender")
 HF_TOKEN     = os.getenv("API_KEY") or os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 ENV_URL      = os.getenv("ENV_URL",      "https://Fieerawe-cybersec-soc-env.hf.space")
 
