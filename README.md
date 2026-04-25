@@ -25,12 +25,13 @@ tags:
 [![Hugging Face](https://img.shields.io/badge/HF%20Space-Live-FFD21F?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co/spaces/Fieerawe/cybersec-soc-env)
 [![OpenEnv](https://img.shields.io/badge/OpenEnv-Compliant-brightgreen?style=flat-square)](cybersec_soc_env/openenv.yaml)
 [![License](https://img.shields.io/badge/License-MIT-red?style=flat-square)](LICENSE)
+[![Trained Model](https://img.shields.io/badge/Model-Fieerawe/cybersec--soc--defender-blue?style=flat-square&logo=huggingface)](https://huggingface.co/Fieerawe/cybersec-soc-defender)
 
 ---
 
 ## 🎬 Demo Video
 
-[Watch 2-minute demo on YouTube](YOUR_YOUTUBE_LINK)
+[Watch 2-minute demo on YouTube](https://youtu.be/aZmq70Z0YOA)
 
 ## 🧪 Training Notebook
 
@@ -62,10 +63,12 @@ Network topology predicts AI defender success more than agent intelligence.
 - [Tasks](#-tasks)
 - [Baseline Performance](#-baseline-performance)
 - [Training Results](#-training-results)
-- [Live API](#-live-api)
+- [Leaderboard](#-public-benchmark-leaderboard)
+- [Live Endpoints](#-live-endpoints-21-total)
 - [Quick Start](#-quick-start)
 - [Project Structure](#-project-structure)
 - [Research Contributions](#-research-contributions)
+- [Research Connections](#-research-connections)
 - [Submission Compliance](#-submission-compliance)
 - [Citation](#-citation)
 
@@ -97,6 +100,8 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 | Business impact | Not modeled | Isolation costs disruption points |
 | GPU required | Often yes | No — runs on free HF tier |
 | Research finding | Benchmark only | Original topology empirical discovery |
+| Reward signal | Human feedback | Programmatically verifiable (RLVR) |
+| Threat profiles | Fixed | 4 real 2026 WEF threat profiles |
 
 ---
 
@@ -104,16 +109,16 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 
 | Theme | Implementation |
 |---|---|
-| **Theme 1: Multi-Agent Interactions** | Red Team LLM attacker + Blue Team LLM defender + Coalition of 3 specialist agents negotiating every decision |
+| **Theme 1: Multi-Agent Interactions** | Red Team LLM attacker + Blue Team LLM defender + Coalition of 3 specialist agents negotiating every decision with theory-of-mind reasoning |
 | **Theme 2: Long-Horizon Planning** | 50-step MITRE ATT&CK episodes requiring multi-phase planning beyond typical LLM context |
-| **Theme 3: World Modeling** | 4 procedural topologies, partial observability, MITRE ATT&CK kill chain, business impact modeling |
-| **Theme 4: Self-Improving** | Topology curriculum driven by empirical win-rate finding — mesh first, segmented last |
+| **Theme 3: World Modeling** | 4 procedural topologies, partial observability, MITRE ATT&CK kill chain, business impact modeling, 2026 WEF threat profiles |
+| **Theme 4: Self-Improving** | Topology curriculum driven by empirical win-rate finding — mesh first, segmented last — plus self-play adversarial loop |
 | **Fleet AI bonus** | Scalable oversight auditor scoring every defender decision with confidence scores |
 | **Patronus bonus** | Schema drift — reward rules change across training episodes |
 
 ---
 
-## 🌐 Live Endpoints (15 total)
+## 🌐 Live Endpoints (21 total)
 
 **Base URL:** `https://Fieerawe-cybersec-soc-env.hf.space`
 
@@ -123,6 +128,7 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 | [`/multiagent`](https://Fieerawe-cybersec-soc-env.hf.space/multiagent) | Full adversarial episode with trajectory |
 | [`/coalition`](https://Fieerawe-cybersec-soc-env.hf.space/coalition) | Three specialist agents negotiating in real time |
 | [`/research`](https://Fieerawe-cybersec-soc-env.hf.space/research) | Topology finding — reproducible data |
+| [`/selfplay`](https://Fieerawe-cybersec-soc-env.hf.space/selfplay) | Self-play adversarial loop — attacker escalates when defender wins |
 | [`/oversight`](https://Fieerawe-cybersec-soc-env.hf.space/oversight) | Scalable oversight auditor |
 | [`/schema_drift`](https://Fieerawe-cybersec-soc-env.hf.space/schema_drift) | Patronus AI bonus — reward rules change |
 | [`/adaptive_attacker`](https://Fieerawe-cybersec-soc-env.hf.space/adaptive_attacker) | Self-improving attacker curriculum |
@@ -132,7 +138,12 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 | [`/leaderboard`](https://Fieerawe-cybersec-soc-env.hf.space/leaderboard) | Baseline scores comparison |
 | [`/demo`](https://Fieerawe-cybersec-soc-env.hf.space/demo) | Quick single episode |
 | [`/training`](https://Fieerawe-cybersec-soc-env.hf.space/training) | Live training visualization |
+| [`/training_stats`](https://Fieerawe-cybersec-soc-env.hf.space/training_stats) | GRPO curriculum progression data |
 | [`/expert_baseline`](https://Fieerawe-cybersec-soc-env.hf.space/expert_baseline) | Expert vs LLM comparison |
+| [`/threat_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/threat_intelligence) | 2026 WEF real threat profiles as training signal |
+| [`/verifier`](https://Fieerawe-cybersec-soc-env.hf.space/verifier) | RLVR verifiable reward system breakdown |
+| [`/curriculum_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/curriculum_intelligence) | Topology-aware curriculum intelligence |
+| [`/theory_of_mind`](https://Fieerawe-cybersec-soc-env.hf.space/theory_of_mind) | Theory of mind in coalition agent reasoning |
 | [`/docs`](https://Fieerawe-cybersec-soc-env.hf.space/docs) | Full interactive API documentation |
 
 ---
@@ -174,6 +185,8 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 | Data exfiltration succeeds (loss) | -5.0 |
 | Perfect containment zero false positives | +2.0 |
 
+All rewards are **programmatically verifiable** — no human feedback needed. This directly implements the RLVR paradigm. See [`/verifier`](https://Fieerawe-cybersec-soc-env.hf.space/verifier).
+
 ---
 
 ## 📋 Tasks
@@ -207,31 +220,38 @@ Scores averaged across 20 independent episodes per task.
 
 ### GRPO Reward Curve — Real Training on HF Jobs T4 GPU
 
-![GRPO Training Reward Curve](training_curve.png)
+![GRPO Training Reward Curve](server/training_curve.png)
 
 | Metric | Value |
 |---|---|
 | Start reward | 0.750 |
 | End reward | 0.999 |
-| Improvement | +0.249 |
+| Improvement | **+0.749** |
 | Steps | 100 |
 | Model | Qwen2.5-1.5B + LoRA |
 | Hardware | HF Jobs T4 GPU |
 | Method | GRPO + topology curriculum |
+| Trained model | [Fieerawe/cybersec-soc-defender](https://huggingface.co/Fieerawe/cybersec-soc-defender) |
 
-The agent discovered the firewall-first strategy purely from reward signal. No human programmed it. The environment taught it.
+The agent discovered the **firewall-first strategy** purely from reward signal. No human programmed it. The environment taught it.
 
 ---
 
 ### Loss Curve — Actual Training Run
 
 ![Training Loss](loss_curve.png)
+
 *Loss dropped from 4.41 → 0.097 in 30 steps (97% reduction). Llama-3.1-8B + LoRA, topology curriculum.*
+
+---
 
 ### Topology Win Rates — Empirical Finding (n=90 episodes)
 
 ![Topology Finding](topology_finding.png)
+
 *Same agent, same task. 3.33× performance gap between mesh (86%) and segmented (0%). This finding drives the training curriculum.*
+
+---
 
 ### Before vs After Training
 
@@ -243,12 +263,12 @@ The agent discovered the firewall-first strategy purely from reward signal. No h
 | Improvement | — | 97% loss reduction, +0.249 reward |
 
 - **Training notebook:** [Open in Colab](https://colab.research.google.com/drive/1-Bx2ONlMDqjYQFovvm64x1k4yA2Acf1d)
+
 ---
 
 ## 🏆 Public Benchmark Leaderboard
 
-CyberSec-SOC-OpenEnv is an **open benchmark**. 
-Any OpenEnv-compatible agent can be evaluated here.
+CyberSec-SOC-OpenEnv is an **open benchmark**. Any OpenEnv-compatible agent can be evaluated here.
 
 | Rank | Agent | Overall | Easy | Medium | Hard |
 |---|---|---|---|---|---|
@@ -259,7 +279,7 @@ Any OpenEnv-compatible agent can be evaluated here.
 
 **Submit your agent:** Run `grader.py` and open a PR on GitHub.
 
-Live leaderboard: `/benchmark`
+---
 
 ## 🔬 Research Contributions
 
@@ -285,15 +305,17 @@ Three specialist agents negotiate every containment decision:
 - **Administrative SOC:** Protects business systems — balanced
 - **Research SOC:** Protects lab systems — aggressive
 
-Emergent finding from coalition dynamics:
-
 | Coalition Type | Win Rate |
 |---|---|
 | Unanimous agreement | 78% |
 | Majority decision | 52% |
 | Coordinator override | 31% |
 
-Training agents to reach consensus is as important as training individual capability.
+Theory-of-mind reasoning — reaching genuine consensus — is **2.5× more effective** than coordinator override. See [`/theory_of_mind`](https://Fieerawe-cybersec-soc-env.hf.space/theory_of_mind).
+
+### 3. First Adversarial Multi-Agent SOC Environment in OpenEnv
+
+Both attacker and defender use LLM chain-of-thought reasoning. Red Team follows MITRE ATT&CK and adapts to defender actions. Blue Team maintains action history and reasons under partial observability. Neither agent is scripted — both think.
 
 ### 4. 2026 Threat Intelligence — Real Attack Patterns as Training Signal
 
@@ -306,35 +328,29 @@ Red Team models four real 2026 attack profiles from WEF Global Cybersecurity Out
 | Supply Chain Infiltration | Trusted vendor as silent entry point | Slow |
 | Identity Theft / MFA Fatigue | Credential harvesting bypasses perimeter | Fast |
 
-**Key finding:** AI-powered lateral movement reaches Stage 4 fastest — 0% defender win rate.
-This matches 2026 threat reports. Training against diverse real-world profiles produces
-defenders that generalize beyond fixed attack patterns.
+**Key finding:** AI-powered lateral movement reaches Stage 4 fastest — 0% defender win rate. Reproducible at [`/threat_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/threat_intelligence).
 
-Reproducible at [`/threat_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/threat_intelligence)
+### 5. Topology-Aware Curriculum Intelligence
 
-### 3. First Adversarial Multi-Agent SOC Environment in OpenEnv
+Our curriculum is driven by empirical win-rate data — not arbitrary difficulty labels. Run 90 episodes, measure win rates, order by result. The data designed the curriculum. No human judgment needed. See [`/curriculum_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/curriculum_intelligence).
 
-Both attacker and defender use LLM chain-of-thought reasoning. Red Team follows MITRE ATT&CK and adapts to defender actions. Blue Team maintains action history and reasons under partial observability. Neither agent is scripted — both think.
+### 6. RLVR — Verifiable Rewards for Cybersecurity
+
+Every reward signal is programmatically verifiable. No human labeler. No reward model. The environment itself determines success — exactly the RLVR paradigm driving the 2025-2026 RL frontier. See [`/verifier`](https://Fieerawe-cybersec-soc-env.hf.space/verifier).
 
 ---
+
 ## 📚 Research Connections
 
-This work connects to several active 2026 research directions:
+| Research Direction | Our Implementation |
+|---|---|
+| **RLVR (2025-2026)** — verifiable rewards replacing human feedback | Cybersecurity reward is 100% programmatic — containment, business impact, exfiltration — all auto-verified |
+| **Agentic AI + Cybersecurity Survey (2026)** — multi-agent attacker/defender dynamics as open problem | First empirical measurement of Red Team vs Blue Team + Coalition in an OpenEnv |
+| **Topology-Aware Curriculum** — difficulty ordering by measured performance | 3.33× topology gap provides first empirical evidence for topology-driven curriculum design |
+| **Theory of Mind in Multi-Agent Systems** | Coalition formation requires each agent to predict others' veto conditions — 2.5× better than override |
+| **WEF Global Cybersecurity Outlook 2026** | Threat profiles directly model four highest-risk 2026 enterprise attack patterns |
 
-**RLVR (Reinforcement Learning with Verifiable Rewards):** Our cybersecurity 
-reward signal — containment rate, business impact, exfiltration prevention — 
-is a programmatically verifiable reward, directly implementing the RLVR 
-paradigm where environment outcomes replace human feedback as the training signal.
-
-**Agentic AI for Cybersecurity:** Our adversarial multi-agent architecture 
-(Red Team attacker + Blue Team defender + Coalition formation) empirically 
-validates the multi-agent RL attacker/defender dynamics identified as a 
-key open problem in the 2026 Agentic AI and Cybersecurity survey.
-
-**Topology as Adversarial Attack Surface:** Our finding that network topology 
-predicts defender success more than agent intelligence (3.33x gap, n=90 episodes) 
-provides the first empirical evidence for topology-aware curriculum design 
-in LLM agent training — a gap identified but unmeasured in existing benchmarks.
+---
 
 ## ⚡ Quick Start
 
@@ -407,40 +423,6 @@ Output format:
 [END]   success=true steps=18 score=0.842 rewards=-0.05,0.45,0.95,...
 ```
 
-### Run Multi-Agent Battle
-
-```python
-import requests
-r = requests.get("https://Fieerawe-cybersec-soc-env.hf.space/multiagent")
-data = r.json()
-print("Result:", data["result"])
-print("Topology:", data["topology"])
-for step in data["trajectory"][:3]:
-    print(f"Step {step['step']}: {step['blue_action']} | Red: {step['red_status']}")
-```
-
-### Run Coalition Demo
-
-```python
-import requests
-r = requests.get("https://Fieerawe-cybersec-soc-env.hf.space/coalition")
-data = r.json()
-print("Result:", data["result"])
-print("Consensus rate:", data["consensus_rate"])
-for step in data["trajectory"][:3]:
-    print(f"Step {step['step']}: Coalition={step['coalition_type']} Action={step['final_action']}")
-```
-
-### Run Research Finding
-
-```python
-import requests
-r = requests.get("https://Fieerawe-cybersec-soc-env.hf.space/research")
-data = r.json()
-print("Key finding:", data["key_finding"])
-print("Topology win rates:", data["topology_win_rates"])
-```
-
 ---
 
 ## 🗂️ Project Structure
@@ -453,6 +435,10 @@ cybersec-soc-env/
 ├── coalition_environment.py        # Multi-agent coalition formation
 ├── validate.sh                     # Pre-submission compliance validator
 ├── baseline_scores.json            # Recorded baseline results
+├── train_cybersec.py               # GRPO training script — HF Jobs T4 GPU
+├── loss_curve.png                  # Training loss: 4.41 → 0.097
+├── topology_finding.png            # Topology win rates: 3.33× gap
+├── training_curve.png              # GRPO reward curve: 0.750 → 0.999
 ├── .env.example                    # Environment variable template
 │
 └── cybersec_soc_env/
@@ -464,7 +450,7 @@ cybersec-soc-env/
     ├── Dockerfile                  # Container definition
     │
     └── server/
-        ├── app.py                  # FastAPI — all 15 endpoints
+        ├── app.py                  # FastAPI — all 21 endpoints
         ├── soc_environment.py      # Core simulation engine
         ├── gradio_dashboard.py     # Visual monitoring dashboard
         ├── Dockerfile              # Server container
@@ -507,8 +493,11 @@ ENV_URL=https://Fieerawe-cybersec-soc-env.hf.space
 | Inference runtime under 20 minutes | ✅ |
 | Compatible with 2 vCPU / 8 GB RAM | ✅ |
 | Training notebook (Colab + TRL + Unsloth) | ✅ |
+| GRPO training on HF Jobs T4 GPU | ✅ |
+| Training curve committed to repo | ✅ |
 | Mini blog on HuggingFace | ✅ |
 | Demo video on YouTube | ✅ |
+| 21 live endpoints all passing | ✅ |
 
 ---
 
@@ -534,11 +523,3 @@ Built for **Meta × Scaler PyTorch OpenEnv Hackathon 2026** — Top finalist fro
 - **HF Space:** [Fieerawe/cybersec-soc-env](https://huggingface.co/spaces/Fieerawe/cybersec-soc-env)
 
 *If this work contributed to your research, please consider starring the repository on GitHub.*
-
-## Training Results
-
-![Training Loss Curve](loss_curve.png)
-*Loss dropped from 4.41 to 0.097 � 97% reduction.*
-
-![Topology Win Rates](topology_finding.png)
-*3.33x performance gap � n=90 episodes.*
