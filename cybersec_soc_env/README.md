@@ -113,7 +113,7 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 
 ---
 
-## 🌐 Live Endpoints (15 total)
+## 🌐 Live Endpoints (20 total)
 
 **Base URL:** `https://Fieerawe-cybersec-soc-env.hf.space`
 
@@ -123,6 +123,7 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 | [`/multiagent`](https://Fieerawe-cybersec-soc-env.hf.space/multiagent) | Full adversarial episode with trajectory |
 | [`/coalition`](https://Fieerawe-cybersec-soc-env.hf.space/coalition) | Three specialist agents negotiating in real time |
 | [`/research`](https://Fieerawe-cybersec-soc-env.hf.space/research) | Topology finding — reproducible data |
+| [`/selfplay`](https://Fieerawe-cybersec-soc-env.hf.space/selfplay) | Self-play adversarial loop — attacker escalates |
 | [`/oversight`](https://Fieerawe-cybersec-soc-env.hf.space/oversight) | Scalable oversight auditor |
 | [`/schema_drift`](https://Fieerawe-cybersec-soc-env.hf.space/schema_drift) | Patronus AI bonus — reward rules change |
 | [`/adaptive_attacker`](https://Fieerawe-cybersec-soc-env.hf.space/adaptive_attacker) | Self-improving attacker curriculum |
@@ -132,7 +133,11 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 | [`/leaderboard`](https://Fieerawe-cybersec-soc-env.hf.space/leaderboard) | Baseline scores comparison |
 | [`/demo`](https://Fieerawe-cybersec-soc-env.hf.space/demo) | Quick single episode |
 | [`/training`](https://Fieerawe-cybersec-soc-env.hf.space/training) | Live training visualization |
+| [`/training_stats`](https://Fieerawe-cybersec-soc-env.hf.space/training_stats) | GRPO curriculum progression data |
 | [`/expert_baseline`](https://Fieerawe-cybersec-soc-env.hf.space/expert_baseline) | Expert vs LLM comparison |
+| [`/threat_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/threat_intelligence) | 2026 real threat profiles as training signal |
+| [`/verifier`](https://Fieerawe-cybersec-soc-env.hf.space/verifier) | Multi-layer reward verification |
+| [`/curriculum_intelligence`](https://Fieerawe-cybersec-soc-env.hf.space/curriculum_intelligence) | Topology curriculum intelligence |
 | [`/docs`](https://Fieerawe-cybersec-soc-env.hf.space/docs) | Full interactive API documentation |
 
 ---
