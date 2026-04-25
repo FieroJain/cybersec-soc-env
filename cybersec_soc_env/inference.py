@@ -34,6 +34,79 @@ ENV_URL      = os.getenv("ENV_URL",      "https://Fieerawe-cybersec-soc-env.hf.s
 BENCHMARK         = "cybersec-soc-env"
 MAX_STEPS         = {"easy": 20, "medium": 35, "hard": 50}
 SUCCESS_THRESHOLD = 0.4
+MEMORY_FILE       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent_memory.json")
+MAX_MEMORIES      = 5
+
+# ---------------------------------------------------------------------------
+# AGENT MEMORY — Cross-Episode Learning (Theme 2: Long-Horizon Planning)
+# ---------------------------------------------------------------------------
+
+def load_memories() -> List[Dict[str, Any]]:
+    """Load recent episode memories from agent_memory.json."""
+    try:
+        if os.path.exists(MEMORY_FILE):
+            with open(MEMORY_FILE, "r") as f:
+                memories = json.load(f)
+            recent = memories[-MAX_MEMORIES:] if len(memories) > MAX_MEMORIES else memories
+            pivot_nodes = set()
+            for mem in recent:
+                for node in mem.get("pivot_nodes_used", []):
+                    pivot_nodes.add(str(node))
+            print(
+                f"[MEMORY] Loaded {len(recent)} prior episodes. "
+                f"Known pivot nodes: {sorted(pivot_nodes) if pivot_nodes else 'none yet'}",
+                flush=True
+            )
+            return recent
+    except Exception as e:
+        print(f"[MEMORY] Could not load memories: {e}", flush=True)
+    return []
+
+
+def save_memory(
+    topology: str,
+    attacker_profile: str,
+    pivot_nodes_used: List[int],
+    episode_outcome: str,
+) -> None:
+    """Append one episode memory to agent_memory.json."""
+    entry = {
+        "topology": topology,
+        "attacker_profile": attacker_profile,
+        "pivot_nodes_used": pivot_nodes_used,
+        "episode_outcome": episode_outcome,
+    }
+    try:
+        memories = []
+        if os.path.exists(MEMORY_FILE):
+            with open(MEMORY_FILE, "r") as f:
+                memories = json.load(f)
+        memories.append(entry)
+        with open(MEMORY_FILE, "w") as f:
+            json.dump(memories, f, indent=2)
+    except Exception as e:
+        print(f"[MEMORY] Could not save memory: {e}", flush=True)
+
+
+def build_memory_prompt(memories: List[Dict[str, Any]]) -> str:
+    """Build a memory context string for the Blue Team system prompt."""
+    if not memories:
+        return ""
+    pivot_nodes = set()
+    topologies_seen = set()
+    for mem in memories:
+        topologies_seen.add(mem.get("topology", "unknown"))
+        for node in mem.get("pivot_nodes_used", []):
+            pivot_nodes.add(str(node))
+    if not pivot_nodes:
+        return ""
+    return (
+        f"\n\nMEMORY FROM PREVIOUS EPISODES:\n"
+        f"In previous episodes against this attacker profile, "
+        f"pivot nodes were: {sorted(pivot_nodes)}. "
+        f"Consider scanning these first.\n"
+        f"Topologies encountered: {sorted(topologies_seen)}.\n"
+    )
 
 # ---------------------------------------------------------------------------
 # STDOUT LOGGING
@@ -299,20 +372,27 @@ def run_task(env, task_level: str) -> dict:
 
     log_start(task=task_level, env=BENCHMARK, model=MODEL_NAME)
 
+    # Load cross-episode memory
+    memories = load_memories()
+    memory_prompt = build_memory_prompt(memories)
+
     rewards: List[float]       = []
     action_history: List[str]  = []
     scanned_nodes: set         = set()
     all_alerts: List[str]      = []
+    pivot_nodes_used: List[int] = []  # Track pivot nodes for memory
 
     steps_taken   = 0
     defender_wins = False
     attack_stage  = 4
     score         = 0.001
     success       = False
+    topology_type = "unknown"
 
     try:
         result = env.reset()
         obs    = result.observation
+        topology_type = getattr(obs, 'topology_type', 'unknown')
 
         for step in range(1, max_steps + 1):
             if obs.done:
@@ -344,11 +424,13 @@ def run_task(env, task_level: str) -> dict:
             else:
                 # ── BLUE TEAM LLM: scan decision or strategic decision ───────
                 obs_text = build_observation_text(obs, action_history, scanned_nodes)
+                # Augment system prompt with memory context
+                augmented_prompt = BLUE_SYSTEM_PROMPT + memory_prompt
                 try:
                     response = client.chat.completions.create(
                         model=MODEL_NAME,
                         messages=[
-                            {"role": "system", "content": BLUE_SYSTEM_PROMPT},
+                            {"role": "system", "content": augmented_prompt},
                             {"role": "user",   "content": obs_text},
                         ],
                         max_tokens=200,
@@ -428,6 +510,14 @@ def run_task(env, task_level: str) -> dict:
 
     finally:
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
+
+        # Save cross-episode memory
+        save_memory(
+            topology=topology_type,
+            attacker_profile="unknown",  # Attacker profile not directly observable
+            pivot_nodes_used=pivot_nodes_used,
+            episode_outcome="win" if defender_wins else "loss",
+        )
 
     return {
         "task_level":    task_level,
