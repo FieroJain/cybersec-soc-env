@@ -58,6 +58,23 @@ Training AI agents for cybersecurity defense is one of the most consequential op
 
 ---
 
+## 🎯 For judges — 5-minute guided tour
+
+> The fastest path through 28 endpoints to the work that matters most.
+
+| Step | Endpoint | What you'll see |
+|---|---|---|
+| 1 | [`/battle`](https://Fieerawe-cybersec-soc-env.hf.space/battle) | Live Red vs Blue visual dashboard — the war room |
+| 2 | [`/simulator`](https://Fieerawe-cybersec-soc-env.hf.space/simulator) | Select "segmented, 20 nodes" → watch win rate drop to 0% |
+| 3 | [`/red_team_reasoning`](https://Fieerawe-cybersec-soc-env.hf.space/red_team_reasoning) | Attacker chain-of-thought — watch it outthink the defender in real time |
+| 4 | [`/failure_analysis`](https://Fieerawe-cybersec-soc-env.hf.space/failure_analysis) | Step-by-step autopsy — exactly why segmented topologies lose at step 7 |
+| 5 | [`/ciso_report`](https://Fieerawe-cybersec-soc-env.hf.space/ciso_report) | Enter "healthcare, segmented" → get a real enterprise security assessment |
+| 6 | [`/research`](https://Fieerawe-cybersec-soc-env.hf.space/research) | The 90-episode topology finding — reproducible, live, original |
+
+> **The core insight in one sentence:** Network topology predicts AI defender success more than agent intelligence — and we proved it empirically across 90 controlled episodes.
+
+---
+
 ## 🔬 Key Research Finding
 
 Network topology predicts AI defender success more than agent intelligence.
