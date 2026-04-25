@@ -30,7 +30,7 @@ tags:
 
 ## 🎬 Demo Video
 
-[Watch 2-minute demo on YouTube](YOUR_YOUTUBE_LINK)
+[Watch 2-minute demo on YouTube](https://youtu.be/aZmq70Z0YOA)
 
 ## 🧪 Training Notebook
 
@@ -474,10 +474,4 @@ Built for **Meta × Scaler PyTorch OpenEnv Hackathon 2026** — Top finalist fro
 
 *If this work contributed to your research, please consider starring the repository on GitHub.*
 
-## Training Results
 
-![Training Loss Curve](loss_curve.png)
-*Loss dropped from 4.41 to 0.097 � 97% reduction.*
-
-![Topology Win Rates](topology_finding.png)
-*3.33x performance gap � n=90 episodes.*
