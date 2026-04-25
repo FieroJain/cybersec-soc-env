@@ -241,7 +241,7 @@ Scores averaged across 20 independent episodes per task.
 
 ### GRPO Reward Curve — Real Training on HF Jobs T4 GPU
 
-![GRPO Training Reward Curve](server/training_curve.png)
+![GRPO Training Reward Curve](https://huggingface.co/spaces/Fieerawe/cybersec-soc-env/resolve/main/training_curve.png)
 
 | Metric | Value |
 |---|---|
@@ -270,7 +270,7 @@ Variance is low. The result is robust across random initialization.
 
 ### Loss Curve — Actual Training Run
 
-![Training Loss](loss_curve.png)
+![Training Loss](https://huggingface.co/spaces/Fieerawe/cybersec-soc-env/resolve/main/loss_curve.png)
 
 *Loss dropped from 4.41 → 0.097 in 30 steps (97% reduction). Llama-3.1-8B + LoRA, topology curriculum.*
 
@@ -278,7 +278,7 @@ Variance is low. The result is robust across random initialization.
 
 ### Topology Win Rates — Empirical Finding (n=90 episodes)
 
-![Topology Finding](topology_finding.png)
+![Topology Finding](https://huggingface.co/spaces/Fieerawe/cybersec-soc-env/resolve/main/topology_finding.png)
 
 *Same agent, same task. 3.33× performance gap between mesh (86%) and segmented (0%). This finding drives the training curriculum.*
 
