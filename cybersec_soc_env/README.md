@@ -1,4 +1,4 @@
----
+﻿---
 title: CyberSec-SOC-OpenEnv
 emoji: 🛡
 colorFrom: blue
@@ -151,7 +151,7 @@ Network topology predicts AI defender success more than agent intelligence.
 
 ---
 
-## 🌐 Live Endpoints (28 total)
+## 🌐 Live Endpoints (26 total)
 
 **Base URL:** `https://Fieerawe-cybersec-soc-env.hf.space`
 
@@ -262,7 +262,7 @@ Scores averaged across 20 independent episodes per task.
 
 | Metric | Value |
 |---|---|
-| Start reward | 0.750 |
+| Start reward | 0.250 |
 | End reward | 0.999 |
 | Improvement | **+0.749** |
 | Steps | 100 |
