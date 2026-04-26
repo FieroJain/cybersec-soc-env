@@ -28,7 +28,8 @@ from typing import Optional
 
 import gradio as gr
 import matplotlib
-matplotlib.use("Agg")          # non-interactive backend — must be before pyplot
+
+matplotlib.use("Agg")  # non-interactive backend — must be before pyplot
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -38,24 +39,25 @@ from .soc_environment import SOCEnvironment, TASK_CONFIG
 from ..models import SOCAction, SOCObservation
 
 # ── Thread-safe global dashboard state ────────────────────────────────────────
-_lock        = threading.Lock()
-_env:  Optional[SOCEnvironment]  = None
-_obs:  Optional[SOCObservation]  = None
-_total_reward: float             = 0.0
-_graph_pos:    Optional[dict]    = None   # spring-layout cache
-_step_count:   int               = 0
+_lock = threading.Lock()
+_env: Optional[SOCEnvironment] = None
+_obs: Optional[SOCObservation] = None
+_total_reward: float = 0.0
+_graph_pos: Optional[dict] = None  # spring-layout cache
+_step_count: int = 0
 
 # ── Attack stage label mapping ─────────────────────────────────────────────────
 _STAGE = {
-    1: ("🟡", "Initial Compromise",  "#ffcc00"),
-    2: ("🟠", "Credential Access",   "#ff8800"),
-    3: ("🔴", "Lateral Movement",    "#ff3300"),
-    4: ("💀", "Exfiltration",        "#cc0055"),
+    1: ("🟡", "Initial Compromise", "#ffcc00"),
+    2: ("🟠", "Credential Access", "#ff8800"),
+    3: ("🔴", "Lateral Movement", "#ff3300"),
+    4: ("💀", "Exfiltration", "#cc0055"),
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  NETWORK GRAPH RENDERER
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _draw_network() -> plt.Figure:
     """Render the live network topology as a dark-themed matplotlib Figure."""
@@ -99,21 +101,21 @@ def _draw_network() -> plt.Figure:
     true_compromised = set(_env.state.true_compromised)
 
     # ── Build per-node status ──────────────────────────────────────────────────
-    node_colors   = []
+    node_colors = []
     border_colors = []
-    node_sizes    = []
-    node_labels   = {}
+    node_sizes = []
+    node_labels = {}
 
     for nid in G.nodes:
-        nd    = G.nodes[nid]
+        nd = G.nodes[nid]
         # Connection count (in + out degree, deduplicated)
         conn_count = G.degree(nid)
-        size  = 900 + int(nd["asset_value"] * 1600)
+        size = 900 + int(nd["asset_value"] * 1600)
         node_sizes.append(size)
 
-        isolated    = nd["isolated"]
+        isolated = nd["isolated"]
         compromised = nid in true_compromised
-        scanned     = nd.get("scanned", False)
+        scanned = nd.get("scanned", False)
 
         # Alert score from obs (handle index mismatch gracefully)
         obs_node = next(
@@ -230,6 +232,7 @@ def _draw_network() -> plt.Figure:
 #  TEXT RENDERERS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _format_stats() -> str:
     """Return markdown for the live-stats panel."""
     global _obs, _total_reward, _env
@@ -244,13 +247,13 @@ def _format_stats() -> str:
             "```"
         )
 
-    stage           = _obs.attack_stage
+    stage = _obs.attack_stage
     s_emoji, s_name, s_color = _STAGE.get(stage, ("❓", "Unknown", "#888888"))
-    stage_bar       = "█" * stage + "░" * (4 - stage)
+    stage_bar = "█" * stage + "░" * (4 - stage)
 
     visible_threats = sum(1 for n in _obs.node_statuses if n["visible_compromise"])
-    isolated_count  = sum(1 for n in _obs.node_statuses if n["is_isolated"])
-    true_threats    = len(_env.state.true_compromised) if _env else 0
+    isolated_count = sum(1 for n in _obs.node_statuses if n["is_isolated"])
+    true_threats = len(_env.state.true_compromised) if _env else 0
 
     # Business impact colour badge
     biz = _obs.business_impact_score
@@ -268,7 +271,7 @@ def _format_stats() -> str:
     elif _obs.done:
         status_line = "### 💀 ATTACKER WINS"
     else:
-        active      = true_threats > 0
+        active = true_threats > 0
         status_line = f"### ⚔️ {'Battle active' if active else 'Network secure'}"
 
     reward_sign = "▲" if _total_reward >= 0 else "▼"
@@ -304,7 +307,7 @@ def _format_alerts() -> str:
         return "Waiting for first episode…"
 
     alerts = list(reversed((_obs.alerts or ["[t=0] No alerts yet."])[-12:]))
-    lines  = []
+    lines = []
     for a in alerts:
         upper = a.upper()
         if any(x in upper for x in ("EXFIL", "ATTACKER WINS", "STAGE 4", "SPREADS")):
@@ -329,10 +332,10 @@ def _format_score() -> str:
     global _total_reward, _obs
     if _obs is None:
         return "### —"
-    colour  = "#00ff88" if _total_reward >= 0 else "#ff4444"
-    sign    = "+" if _total_reward >= 0 else ""
-    value   = f"{sign}{_total_reward:.3f}"
-    result  = ""
+    colour = "#00ff88" if _total_reward >= 0 else "#ff4444"
+    sign = "+" if _total_reward >= 0 else ""
+    value = f"{sign}{_total_reward:.3f}"
+    result = ""
     if _obs.done:
         result = "<br><small>✅ Done</small>" if _obs.defender_wins else "<br><small>❌ Done</small>"
     return (
@@ -347,6 +350,7 @@ def _format_score() -> str:
 #  ACTION HANDLERS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _all_outputs():
     return _draw_network(), _format_stats(), _format_alerts(), _format_score()
 
@@ -354,11 +358,11 @@ def _all_outputs():
 def do_reset(task_level: str):
     global _env, _obs, _total_reward, _graph_pos, _step_count
     with _lock:
-        _env          = SOCEnvironment(task_level=task_level, seed=42)
-        _obs          = _env.reset()
+        _env = SOCEnvironment(task_level=task_level, seed=42)
+        _obs = _env.reset()
         _total_reward = 0.0
-        _graph_pos    = None   # fresh spring-layout for new topology
-        _step_count   = 0
+        _graph_pos = None  # fresh spring-layout for new topology
+        _step_count = 0
     return _all_outputs()
 
 
@@ -368,18 +372,18 @@ def _do_step(action_type: str, node_id: int):
         return _all_outputs()
     with _lock:
         action = SOCAction(action_type=action_type, target_node_id=int(node_id))
-        _obs   = _env.step(action)
+        _obs = _env.step(action)
         if _obs.reward is not None:
             _total_reward += float(_obs.reward)
         _step_count += 1
     return _all_outputs()
 
 
-def do_scan(node_id):    return _do_step("scan",     int(node_id or 0))
-def do_isolate(node_id): return _do_step("isolate",  int(node_id or 0))
-def do_patch(node_id):   return _do_step("patch",    int(node_id or 0))
-def do_firewall():       return _do_step("firewall", -1)
-def do_nothing():        return _do_step("nothing",  -1)
+def do_scan(node_id): return _do_step("scan", int(node_id or 0))
+def do_isolate(node_id): return _do_step("isolate", int(node_id or 0))
+def do_patch(node_id): return _do_step("patch", int(node_id or 0))
+def do_firewall(): return _do_step("firewall", -1)
+def do_nothing(): return _do_step("nothing", -1)
 
 
 def do_ai_demo(task_level: str):
@@ -391,11 +395,11 @@ def do_ai_demo(task_level: str):
 
     with _lock:
         # Reset with deterministic seed for consistency
-        _env          = SOCEnvironment(task_level=task_level, seed=42)
-        _obs          = _env.reset()
+        _env = SOCEnvironment(task_level=task_level, seed=42)
+        _obs = _env.reset()
         _total_reward = 0.0
-        _graph_pos    = None
-        _step_count   = 0
+        _graph_pos = None
+        _step_count = 0
 
     scanned_ids: set = set()
 
@@ -523,6 +527,118 @@ with gr.Blocks(
     ),
 ) as demo:
 
+    # ──────────────────────────────────────────────────────────────────────────
+    #  ENDPOINT DASHBOARD — 28 live endpoints
+    # ──────────────────────────────────────────────────────────────────────────
+    gr.HTML("""
+    <div style="font-family:'Share Tech Mono',monospace;padding:24px;background:linear-gradient(135deg,#0f172a,#1a1040);color:#e2e8f0;border-radius:14px;margin-bottom:20px;border:1px solid #1e3a5f;box-shadow:0 4px 24px rgba(0,120,255,0.08)">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+        <span style="font-size:2em">&#x1f6e1;&#xfe0f;</span>
+        <div>
+          <h1 style="color:#00ff88;font-size:1.6em;margin:0;letter-spacing:0.04em">CyberSec-SOC-OpenEnv</h1>
+          <p style="color:#64748b;font-size:0.85em;margin:2px 0 0">First adversarial multi-agent cybersecurity defense environment in OpenEnv &mdash; 28 live endpoints</p>
+        </div>
+      </div>
+      <p style="color:#94a3b8;font-size:0.82em;margin:8px 0 16px">Meta &times; Scaler PyTorch OpenEnv Hackathon 2026 &middot; Team Peak</p>
+
+      <h3 style="color:#ff4444;margin:16px 0 8px;font-size:0.95em">&#x1f534; Core Battle Endpoints (4)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:8px 12px;background:#0a0e1a;border-radius:8px;border:1px solid #1e293b">
+        <a href="/battle" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x2694;&#xfe0f; /battle</a>
+        <span style="color:#94a3b8;font-size:0.82em">Live Red vs Blue visual dashboard</span>
+        <a href="/multiagent" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f916; /multiagent</a>
+        <span style="color:#94a3b8;font-size:0.82em">Full adversarial episode with trajectory</span>
+        <a href="/coalition" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f91d; /coalition</a>
+        <span style="color:#94a3b8;font-size:0.82em">Three specialist agents negotiating</span>
+        <a href="/selfplay" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f504; /selfplay</a>
+        <span style="color:#94a3b8;font-size:0.82em">Self-play adversarial training loop</span>
+      </div>
+
+      <h3 style="color:#22c55e;margin:16px 0 8px;font-size:0.95em">&#x1f52c; Research Endpoints (7)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:8px 12px;background:#0a0e1a;border-radius:8px;border:1px solid #1e293b">
+        <a href="/research" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f4ca; /research</a>
+        <span style="color:#94a3b8;font-size:0.82em">Topology finding &mdash; 3.33x gap &mdash; n=90</span>
+        <a href="/verifier" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x2705; /verifier</a>
+        <span style="color:#94a3b8;font-size:0.82em">RLVR verifiable reward breakdown</span>
+        <a href="/curriculum_intelligence" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f9e0; /curriculum_intelligence</a>
+        <span style="color:#94a3b8;font-size:0.82em">Topology-aware curriculum design</span>
+        <a href="/theory_of_mind" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f4ad; /theory_of_mind</a>
+        <span style="color:#94a3b8;font-size:0.82em">Coalition theory-of-mind reasoning</span>
+        <a href="/threat_intelligence" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f30d; /threat_intelligence</a>
+        <span style="color:#94a3b8;font-size:0.82em">2026 WEF real threat profiles</span>
+        <a href="/adversarial" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f3af; /adversarial</a>
+        <span style="color:#94a3b8;font-size:0.82em">Topology as adversarial attack surface</span>
+        <a href="/robustness" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f6e1;&#xfe0f; /robustness</a>
+        <span style="color:#94a3b8;font-size:0.82em">Full adversarial robustness report</span>
+      </div>
+
+      <h3 style="color:#ff8800;margin:16px 0 8px;font-size:0.95em">&#x1f525; New in This Submission (5)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:8px 12px;background:#1a1500;border-radius:8px;border:1px solid #4a3500">
+        <a href="/simulator" target="_blank" style="color:#fbbf24;text-decoration:none;font-size:0.9em">&#x1f3ae; /simulator</a>
+        <span style="color:#d4a574;font-size:0.82em">Predict your AI defender's win rate</span>
+        <a href="/red_team_reasoning" target="_blank" style="color:#fbbf24;text-decoration:none;font-size:0.9em">&#x2694;&#xfe0f; /red_team_reasoning</a>
+        <span style="color:#d4a574;font-size:0.82em">Attacker chain-of-thought explainer</span>
+        <a href="/ciso_report" target="_blank" style="color:#fbbf24;text-decoration:none;font-size:0.9em">&#x1f4cb; /ciso_report</a>
+        <span style="color:#d4a574;font-size:0.82em">Enterprise security assessment generator</span>
+        <a href="/failure_analysis" target="_blank" style="color:#fbbf24;text-decoration:none;font-size:0.9em">&#x1f52c; /failure_analysis</a>
+        <span style="color:#d4a574;font-size:0.82em">Step-by-step autopsy of segmented failure</span>
+        <a href="/alert_fatigue" target="_blank" style="color:#fbbf24;text-decoration:none;font-size:0.9em">&#x1f4ca; /alert_fatigue</a>
+        <span style="color:#d4a574;font-size:0.82em">Alert fatigue vs defender performance</span>
+      </div>
+
+      <h3 style="color:#22c55e;margin:16px 0 8px;font-size:0.95em">&#x1f3cb;&#xfe0f; Training Endpoints (6)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:8px 12px;background:#0a0e1a;border-radius:8px;border:1px solid #1e293b">
+        <a href="/training" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f4c8; /training</a>
+        <span style="color:#94a3b8;font-size:0.82em">Live training visualization</span>
+        <a href="/training_stats" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f4c9; /training_stats</a>
+        <span style="color:#94a3b8;font-size:0.82em">GRPO curriculum progression data</span>
+        <a href="/adaptive_attacker" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f53a; /adaptive_attacker</a>
+        <span style="color:#94a3b8;font-size:0.82em">Self-improving attacker curriculum</span>
+        <a href="/schema_drift" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f300; /schema_drift</a>
+        <span style="color:#94a3b8;font-size:0.82em">Patronus bonus &mdash; reward rules change</span>
+        <a href="/oversight" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f441;&#xfe0f; /oversight</a>
+        <span style="color:#94a3b8;font-size:0.82em">Fleet AI scalable oversight auditor</span>
+        <a href="/long_horizon" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x23f3; /long_horizon</a>
+        <span style="color:#94a3b8;font-size:0.82em">Full 50-step hard episode</span>
+      </div>
+
+      <h3 style="color:#22c55e;margin:16px 0 8px;font-size:0.95em">&#x1f4cb; Evaluation &amp; Utility (5)</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:8px 12px;background:#0a0e1a;border-radius:8px;border:1px solid #1e293b">
+        <a href="/leaderboard" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f3c6; /leaderboard</a>
+        <span style="color:#94a3b8;font-size:0.82em">Baseline scores + ablation rows</span>
+        <a href="/expert_baseline" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f393; /expert_baseline</a>
+        <span style="color:#94a3b8;font-size:0.82em">Expert vs LLM comparison</span>
+        <a href="/demo" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x25b6;&#xfe0f; /demo</a>
+        <span style="color:#94a3b8;font-size:0.82em">Quick single episode</span>
+        <a href="/health" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f49a; /health</a>
+        <span style="color:#94a3b8;font-size:0.82em">Environment health check</span>
+        <a href="/docs" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f4da; /docs</a>
+        <span style="color:#94a3b8;font-size:0.82em">Full interactive API documentation</span>
+      </div>
+
+      <h3 style="color:#22c55e;margin:16px 0 8px;font-size:0.95em">&#x1f517; External Links</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;padding:8px 12px;background:#0a0e1a;border-radius:8px;border:1px solid #1e293b">
+        <a href="https://github.com/FieroJain/cybersec-soc-env" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f4bb; GitHub</a>
+        <span style="color:#94a3b8;font-size:0.82em">Full source code</span>
+        <a href="https://huggingface.co/Fieerawe/cybersec-soc-defender" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f917; Trained Model</a>
+        <span style="color:#94a3b8;font-size:0.82em">Fieerawe/cybersec-soc-defender</span>
+        <a href="https://youtu.be/aZmq70Z0YOA" target="_blank" style="color:#60a5fa;text-decoration:none;font-size:0.9em">&#x1f3ac; Demo Video</a>
+        <span style="color:#94a3b8;font-size:0.82em">2-minute walkthrough on YouTube</span>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-top:16px">
+        <div style="flex:1;padding:10px;background:#1e293b;border-radius:8px;border-left:4px solid #ff4444">
+          <strong style="color:#ff4444;font-size:0.85em">Key Finding:</strong>
+          <span style="color:#e2e8f0;font-size:0.82em"> Topology predicts AI defender success more than agent intelligence. 3.33x gap. Mesh: 86%. Segmented: 0%.</span>
+        </div>
+        <div style="flex:1;padding:10px;background:#1e293b;border-radius:8px;border-left:4px solid #22c55e">
+          <strong style="color:#22c55e;font-size:0.85em">Training Result:</strong>
+          <span style="color:#e2e8f0;font-size:0.82em"> GRPO on T4 GPU &mdash; reward 0.250 &rarr; 0.999 (+0.749) in 100 steps.</span>
+        </div>
+      </div>
+    </div>
+    """)
+
+
     # ── Header ────────────────────────────────────────────────────────────────
     gr.HTML("""
     <div style="
@@ -586,11 +702,11 @@ with gr.Blocks(
             )
 
             with gr.Row():
-                scan_btn = gr.Button("🔍 SCAN",    elem_classes=["btn-scan"],  size="lg")
-                iso_btn  = gr.Button("🔒 ISOLATE", elem_classes=["btn-iso"],   size="lg")
+                scan_btn = gr.Button("🔍 SCAN", elem_classes=["btn-scan"], size="lg")
+                iso_btn = gr.Button("🔒 ISOLATE", elem_classes=["btn-iso"], size="lg")
             with gr.Row():
-                patch_btn = gr.Button("🔧 PATCH",   elem_classes=["btn-patch"], size="lg")
-                fw_btn    = gr.Button("🔥 FIREWALL",elem_classes=["btn-fw"],    size="lg")
+                patch_btn = gr.Button("🔧 PATCH", elem_classes=["btn-patch"], size="lg")
+                fw_btn = gr.Button("🔥 FIREWALL", elem_classes=["btn-fw"], size="lg")
             nothing_btn = gr.Button(
                 "⏸  DO NOTHING", elem_classes=["btn-noop"], size="lg"
             )
@@ -671,10 +787,11 @@ with gr.Blocks(
     # ── Event wiring ───────────────────────────────────────────────────────────
     _outs = [graph_out, stats_md, alerts_box, score_html]
 
-    reset_btn.click(  fn=do_reset,    inputs=[task_dd],  outputs=_outs)
-    demo_btn.click(   fn=do_ai_demo,  inputs=[task_dd],  outputs=_outs)
-    scan_btn.click(   fn=do_scan,     inputs=[node_inp], outputs=_outs)
-    iso_btn.click(    fn=do_isolate,  inputs=[node_inp], outputs=_outs)
-    patch_btn.click(  fn=do_patch,    inputs=[node_inp], outputs=_outs)
-    fw_btn.click(     fn=do_firewall, inputs=[],         outputs=_outs)
-    nothing_btn.click(fn=do_nothing,  inputs=[],         outputs=_outs)
+    reset_btn.click(fn=do_reset, inputs=[task_dd], outputs=_outs)
+    demo_btn.click(fn=do_ai_demo, inputs=[task_dd], outputs=_outs)
+    scan_btn.click(fn=do_scan, inputs=[node_inp], outputs=_outs)
+    iso_btn.click(fn=do_isolate, inputs=[node_inp], outputs=_outs)
+    patch_btn.click(fn=do_patch, inputs=[node_inp], outputs=_outs)
+    fw_btn.click(fn=do_firewall, inputs=[], outputs=_outs)
+    nothing_btn.click(fn=do_nothing, inputs=[], outputs=_outs)
+# endpoint dashboard v2

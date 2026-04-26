@@ -98,6 +98,51 @@ def root():
 </body>
 </html>"""
 
+@app.get("/health", response_class=JSONResponse)
+def health_check():
+    """Quick health check -- returns 200 if the server is running."""
+    return {"status": "ok", "environment": "CyberSec-SOC-OpenEnv", "endpoints": 28}
+
+
+@app.get("/endpoints", response_class=JSONResponse)
+def list_endpoints():
+    """List all 28 live endpoints with descriptions."""
+    return {
+        "total": 28,
+        "endpoints": [
+            {"path": "/battle", "description": "Live Red vs Blue visual dashboard"},
+            {"path": "/multiagent", "description": "Full adversarial episode with trajectory"},
+            {"path": "/coalition", "description": "Three specialist agents negotiating"},
+            {"path": "/selfplay", "description": "Self-play adversarial training loop"},
+            {"path": "/research", "description": "Topology finding -- 3.33x gap -- n=90"},
+            {"path": "/verifier", "description": "RLVR verifiable reward breakdown"},
+            {"path": "/curriculum_intelligence", "description": "Topology-aware curriculum design"},
+            {"path": "/theory_of_mind", "description": "Coalition theory-of-mind reasoning"},
+            {"path": "/threat_intelligence", "description": "2026 WEF real threat profiles"},
+            {"path": "/adversarial", "description": "Topology as adversarial attack surface"},
+            {"path": "/robustness", "description": "Full adversarial robustness report"},
+            {"path": "/training", "description": "Live training visualization"},
+            {"path": "/training_stats", "description": "GRPO curriculum progression data"},
+            {"path": "/adaptive_attacker", "description": "Self-improving attacker curriculum"},
+            {"path": "/schema_drift", "description": "Patronus bonus -- reward rules change"},
+            {"path": "/oversight", "description": "Fleet AI scalable oversight auditor"},
+            {"path": "/long_horizon", "description": "Full 50-step hard episode"},
+            {"path": "/leaderboard", "description": "Baseline scores + ablation rows"},
+            {"path": "/expert_baseline", "description": "Expert vs LLM comparison"},
+            {"path": "/demo", "description": "Quick single episode"},
+            {"path": "/simulator", "description": "Predict your AI defender win rate"},
+            {"path": "/red_team_reasoning", "description": "Attacker chain-of-thought explainer"},
+            {"path": "/ciso_report", "description": "Enterprise security assessment generator"},
+            {"path": "/failure_analysis", "description": "Step-by-step autopsy of segmented failure"},
+            {"path": "/alert_fatigue", "description": "Alert fatigue vs defender performance"},
+            {"path": "/health", "description": "Environment health check"},
+            {"path": "/endpoints", "description": "This endpoint -- list all endpoints"},
+            {"path": "/docs", "description": "Full interactive API documentation"},
+        ]
+    }
+
+
+
 
 def _run_grader_episode(env: SOCEnvironment) -> Dict[str, Any]:
     """Run a single grader episode with deterministic rule-based agent."""
